@@ -1,0 +1,60 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>bin</id>
+    <formats>
+        <!-- The distribution is packaged in a .tar.gz file -->
+        <format>tar.gz</format>
+    </formats>
+
+    <fileSets>
+        <!-- Copy the prepare-benchmark script and any configuration files to the distribution -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>.</outputDirectory>
+            <includes>
+                <include>prepare-benchmark.sh</include>
+                <!-- Configuration files should be stored in config-template/ and can be included in the distribution by uncommenting the following line -->
+                <!--<include>config-template/**</include>-->
+            </includes>
+        </fileSet>
+        <!-- Copy the fat JAR produced by maven-shade-plugin to lib/ in the distribution -->
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <excludes>
+                <!-- Exclude backup artifacts produced by maven-shade-plugin -->
+                <exclude>original*</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <!-- Copy the project README to the distribution with a different name to avoid conflicts -->
+        <!--<file>
+            <source>${project.basedir}/README.md</source>
+            <outputDirectory>.</outputDirectory>
+            <destName>README-graphalytics-myplatform.md</destName>
+        </file>-->
+    </files>
+
+    <dependencySets>
+        <!-- Extract the scripts and other resources required by the core into the root of the distribution -->
+        <dependencySet>
+            <outputDirectory>.</outputDirectory>
+            <!-- Matches the graphalytics-core:resources dependency and any future dependencies containing resources -->
+            <includes>
+                <include>*:resources</include>
+            </includes>
+            <!-- Unpack the .tar.gz artifacts attached to the *:resources dependencies to make scripts, etc. available in the root -->
+            <unpack>true</unpack>
+            <unpackOptions>
+                <excludes>
+                    <!-- Ignore metadata files produced by Java when extracting the dependencies -->
+                    <exclude>META-INF/**</exclude>
+                </excludes>
+            </unpackOptions>
+        </dependencySet>
+    </dependencySets>
+</assembly>
