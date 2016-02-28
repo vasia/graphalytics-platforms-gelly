@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.lcc;
+package nl.tudelft.graphalytics.flink.algorithms.cdlp;
 
 import java.util.HashMap;
 import java.util.Map;
