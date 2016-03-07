@@ -18,6 +18,14 @@
 
 package nl.tudelft.graphalytics.flink;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import nl.tudelft.graphalytics.AbstractPlatform;
 import nl.tudelft.graphalytics.PlatformExecutionException;
 import nl.tudelft.graphalytics.domain.Benchmark;
@@ -26,10 +34,24 @@ import nl.tudelft.graphalytics.domain.PlatformBenchmarkResult;
 
 public class GellyPlatform extends AbstractPlatform {
 
+	private static String HDFS_DIRECTORY_KEY = "hadoop.hdfs.directory";
+	private static String HDFS_DIRECTORY = "graphalytics";
+	private Map<String, Tuple2<String, String>> graphPaths = new HashMap<>();
+
 	@Override
 	public void uploadGraph(Graph graph) throws Exception {
-		// TODO Auto-generated method stub
-		
+		Path vertexPath = new Path(graph.getVertexFilePath());
+		Path edgePath = new Path(graph.getEdgeFilePath());
+		Path hdfsVertexPath = new Path(HDFS_DIRECTORY + "/input/" + graph.getName() + ".vertices");
+		Path hdfsEdgePath = new Path(HDFS_DIRECTORY + "/input/" + graph.getName() + ".edges");
+
+		FileSystem fs = FileSystem.get(new Configuration());
+		fs.copyFromLocalFile(vertexPath, hdfsVertexPath);
+		fs.copyFromLocalFile(edgePath, hdfsEdgePath);
+		fs.close();
+
+		graphPaths.put(graph.getName(), new Tuple2<String, String>(
+				hdfsVertexPath.toUri().getPath(), hdfsEdgePath.toUri().getPath()));
 	}
 
 	@Override
@@ -38,7 +60,6 @@ public class GellyPlatform extends AbstractPlatform {
 		// TODO check which algorithm and call the corresponding Gelly job
 		// TODO retrieve the graph input path and specification from the graph object
 		// and create the Gelly graph
-		// TODO what are the parameters?!
 		throw new PlatformExecutionException("No algorithms are supported for Gelly yet!");
 	}
 

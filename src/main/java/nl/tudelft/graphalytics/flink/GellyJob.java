@@ -18,18 +18,25 @@
 
 package nl.tudelft.graphalytics.flink;
 
-import nl.tudelft.graphalytics.domain.GraphFormat;
+import org.apache.flink.api.java.ExecutionEnvironment;
 
 abstract class GellyJob {
 
 	private String graphInputPath;
-	private GraphFormat graphFormat;
 	private String outputPath;
 
-	public GellyJob(String inputPath, GraphFormat format, String outputPath) {
+	public GellyJob(String inputPath, String outputPath) {
 		this.graphInputPath = inputPath;
-		this.graphFormat = format;
 		this.outputPath = outputPath;
 	}
 
+	/**
+	 * Parse the input vertices and edges,
+	 * execute the Gelly job, and write back the result
+	 */
+	public void runJob() {
+		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+		
+		
+	}
 }
