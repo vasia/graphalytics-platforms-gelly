@@ -21,6 +21,16 @@ package nl.tudelft.graphalytics.flink;
 import java.util.HashMap;
 import java.util.Map;
 
+import nl.tudelft.graphalytics.domain.Algorithm;
+import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
+import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
+import nl.tudelft.graphalytics.domain.algorithms.ParameterFactory;
+import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
+import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
+import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
+import nl.tudelft.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
+import nl.tudelft.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
+import nl.tudelft.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -57,10 +67,21 @@ public class GellyPlatform extends AbstractPlatform {
 	@Override
 	public PlatformBenchmarkResult executeAlgorithmOnGraph(Benchmark benchmark)
 			throws PlatformExecutionException {
-		// TODO check which algorithm and call the corresponding Gelly job
-		// TODO retrieve the graph input path and specification from the graph object
-		// and create the Gelly graph
-		throw new PlatformExecutionException("No algorithms are supported for Gelly yet!");
+
+		Algorithm algo = benchmark.getAlgorithm();
+		Graph input = benchmark.getGraph();
+		AlgorithmParameters parameters = (AlgorithmParameters) benchmark.getAlgorithmParameters();
+		boolean isDirected = input.isDirected();
+
+		switch (algo.getAcronym()) {
+			case "BFS": new ScatterGatherBFS(parameters);
+			case "CDLP": new LabelPropagation(parameters, isDirected);
+			case "LCC": new LocalClusteringCoefficient(isDirected);
+			case "PR": new ScatterGatherPageRank<Long>(parameters, input.getNumberOfVertices());
+			case "SSSP": new ScatterGatherSSSP(parameters);
+			case "WCC": new ScatterGatherConnectedComponents<Long>(isDirected);
+			default: throw new PlatformExecutionException("Algorithm " + algo.getAcronym() + " is not supported!");
+		}
 	}
 
 	@Override

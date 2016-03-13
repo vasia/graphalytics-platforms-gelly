@@ -18,6 +18,8 @@
 
 package nl.tudelft.graphalytics.flink.algorithms.pr;
 
+import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
+import nl.tudelft.graphalytics.domain.algorithms.PageRankParameters;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
@@ -31,49 +33,19 @@ import org.apache.flink.graph.spargel.VertexUpdateFunction;
 
 public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Double, DataSet<Vertex<K, Double>>> {
 
-	private double beta;
-	private int maxIterations;
-	private long numberOfVertices;
+	private final double beta;
+	private final int maxIterations;
+	private final long numberOfVertices;
 
-	/**
-	 * Creates an instance of the PageRank algorithm.
-	 * If the number of vertices of the input graph is known,
-	 * use the {@link PageRank#PageRank(double, long, int)} constructor instead.
-	 * 
-	 * The implementation assumes that each page has at least one incoming and one outgoing link.
-	 * 
-	 * @param beta the damping factor
-	 * @param maxIterations the maximum number of iterations
-	 */
-	public ScatterGatherPageRank(double beta, int maxIterations) {
-		this.beta = beta;
-		this.maxIterations = maxIterations;
-		this.numberOfVertices = 0;
-	}
-
-	/**
-	 * Creates an instance of the PageRank algorithm.
-	 * If the number of vertices of the input graph is known,
-	 * use the {@link PageRank#PageRank(double, int)} constructor instead.
-	 * 
-	 * The implementation assumes that each page has at least one incoming and one outgoing link.
-	 * 
-	 * @param beta the damping factor
-	 * @param maxIterations the maximum number of iterations
-	 * @param numVertices the number of vertices in the input
-	 */
-	public ScatterGatherPageRank(double beta, long numVertices, int maxIterations) {
-		this.beta = beta;
-		this.maxIterations = maxIterations;
-		this.numberOfVertices = numVertices;
+	public ScatterGatherPageRank(AlgorithmParameters params, long numVertices) {
+		PageRankParameters prParams = (PageRankParameters)params;
+		beta = prParams.getDampingFactor();
+		maxIterations = prParams.getNumberOfIterations();
+		numberOfVertices = numVertices;
 	}
 
 	@Override
 	public DataSet<Vertex<K, Double>> run(Graph<K, Double, Double> network) throws Exception {
-
-		if (numberOfVertices == 0) {
-			numberOfVertices = network.numberOfVertices();
-		}
 
 		DataSet<Tuple2<K, Long>> vertexOutDegrees = network.outDegrees();
 

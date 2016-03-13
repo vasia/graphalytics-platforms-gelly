@@ -34,11 +34,10 @@ public class ScatterGatherConnectedComponents <K> implements
 	private final boolean isDirected;
 
 	/**
-	 * @param maxIterations The maximum number of iterations to run.
 	 * @param directed true if the input graph is directed
 	 */
-	public ScatterGatherConnectedComponents(Integer maxIterations, Boolean directed) {
-		this.maxIterations = maxIterations;
+	public ScatterGatherConnectedComponents(Boolean directed) {
+		this.maxIterations = 100;
 		this.isDirected = directed;
 	}
 

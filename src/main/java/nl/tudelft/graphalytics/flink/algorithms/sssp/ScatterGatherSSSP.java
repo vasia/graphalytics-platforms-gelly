@@ -18,6 +18,8 @@
 
 package nl.tudelft.graphalytics.flink.algorithms.sssp;
 
+import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
+import nl.tudelft.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.graph.Edge;
@@ -28,38 +30,35 @@ import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
 
-public class ScatterGatherSSSP <K> implements GraphAlgorithm<K, Double, Double, DataSet<Vertex<K, Double>>> {
+public class ScatterGatherSSSP implements GraphAlgorithm<Long, Double, Double, DataSet<Vertex<Long, Double>>> {
 
-	private final K srcVertexId;
+	private final long srcVertexId;
 	private final Integer maxIterations;
 
-	/**
-	 * @param srcVertexId The ID of the source vertex.
-	 * @param maxIterations The maximum number of iterations to run.
-	 */
-	public ScatterGatherSSSP(K srcVertexId, Integer maxIterations) {
-		this.srcVertexId = srcVertexId;
-		this.maxIterations = maxIterations;
+	public ScatterGatherSSSP(AlgorithmParameters params) {
+		SingleSourceShortestPathsParameters ssspParams = (SingleSourceShortestPathsParameters)params;
+		this.srcVertexId = ssspParams.getSourceVertex();
+		this.maxIterations = 100;
 	}
 
 	@Override
-	public DataSet<Vertex<K, Double>> run(Graph<K, Double, Double> input) {
+	public DataSet<Vertex<Long, Double>> run(Graph<Long, Double, Double> input) {
 
-		return input.mapVertices(new InitVerticesMapper<K>(srcVertexId))
-				.runScatterGatherIteration(new VertexDistanceUpdater<K>(), new MinDistanceMessenger<K>(),
+		return input.mapVertices(new InitVerticesMapper(srcVertexId))
+				.runScatterGatherIteration(new VertexDistanceUpdater(), new MinDistanceMessenger(),
 				maxIterations).getVertices();
 	}
 
 	@SuppressWarnings("serial")
-	public static final class InitVerticesMapper<K>	implements MapFunction<Vertex<K, Double>, Double> {
+	public static final class InitVerticesMapper implements MapFunction<Vertex<Long, Double>, Double> {
 
-		private K srcVertexId;
+		private long srcVertexId;
 
-		public InitVerticesMapper(K srcId) {
+		public InitVerticesMapper(long srcId) {
 			this.srcVertexId = srcId;
 		}
 
-		public Double map(Vertex<K, Double> value) {
+		public Double map(Vertex<Long, Double> value) {
 			if (value.f0.equals(srcVertexId)) {
 				return 0.0;
 			} else {
@@ -71,14 +70,13 @@ public class ScatterGatherSSSP <K> implements GraphAlgorithm<K, Double, Double, 
 	/**
 	 * Function that updates the value of a vertex by picking the minimum
 	 * distance from all incoming messages.
-	 * 
-	 * @param <K>
+	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class VertexDistanceUpdater<K> extends VertexUpdateFunction<K, Double, Double> {
+	public static final class VertexDistanceUpdater extends VertexUpdateFunction<Long, Double, Double> {
 
 		@Override
-		public void updateVertex(Vertex<K, Double> vertex,
+		public void updateVertex(Vertex<Long, Double> vertex,
 				MessageIterator<Double> inMessages) {
 
 			Double minDistance = Double.MAX_VALUE;
@@ -98,16 +96,15 @@ public class ScatterGatherSSSP <K> implements GraphAlgorithm<K, Double, Double, 
 	/**
 	 * Distributes the minimum distance associated with a given vertex among all
 	 * the target vertices summed up with the edge's value.
-	 * 
-	 * @param <K>
+	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class MinDistanceMessenger<K> extends MessagingFunction<K, Double, Double, Double> {
+	public static final class MinDistanceMessenger extends MessagingFunction<Long, Double, Double, Double> {
 
 		@Override
-		public void sendMessages(Vertex<K, Double> vertex) {
+		public void sendMessages(Vertex<Long, Double> vertex) {
 			if (vertex.getValue() < Double.POSITIVE_INFINITY) {
-				for (Edge<K, Double> edge : getEdges()) {
+				for (Edge<Long, Double> edge : getEdges()) {
 					sendMessageTo(edge.getTarget(), vertex.getValue() + edge.getValue());
 				}
 			}

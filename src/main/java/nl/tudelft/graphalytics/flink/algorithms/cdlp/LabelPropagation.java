@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
+import nl.tudelft.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
@@ -32,31 +34,24 @@ import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.types.NullValue;
 
 @SuppressWarnings("serial")
-public class LabelPropagation<K> implements GraphAlgorithm<K, Long, NullValue, DataSet<Vertex<K, Long>>> {
+public class LabelPropagation implements GraphAlgorithm<Long, Long, NullValue, DataSet<Vertex<Long, Long>>> {
 
 	private final int maxIterations;
 	private final boolean isDirected;
-	
-	/**
-	 * Creates a new Label Propagation algorithm instance.
-	 * The algorithm converges when vertices no longer update their value
-	 * or when the maximum number of iterations is reached.
-	 * 
-	 * @param maxIterations The maximum number of iterations to run.
-	 */
-	public LabelPropagation(int maxIterations, boolean directed) {
-		this.maxIterations = maxIterations;
+
+	public LabelPropagation(AlgorithmParameters params, boolean directed) {
+		this.maxIterations = ((CommunityDetectionLPParameters)(params)).getMaxIterations();
 		this.isDirected = directed;
 	}
-	
+
 	@Override
-	public DataSet<Vertex<K, Long>> run(Graph<K, Long, NullValue> input) {
+	public DataSet<Vertex<Long, Long>> run(Graph<Long, Long, NullValue> input) {
 
 		if (isDirected) {
 			input = input.getUndirected();
 		}
 		return input.runScatterGatherIteration(
-				new UpdateVertexLabel<K>(), new SendNewLabelToNeighbors<K>(), maxIterations)
+				new UpdateVertexLabel(), new SendNewLabelToNeighbors(), maxIterations)
 				.getVertices();
 	}
 	
@@ -64,9 +59,9 @@ public class LabelPropagation<K> implements GraphAlgorithm<K, Long, NullValue, D
 	 * Function that updates the value of a vertex by adopting the most frequent
 	 * label among its in-neighbors
 	 */
-	public static final class UpdateVertexLabel<K> extends VertexUpdateFunction<K, Long, Long> {
+	public static final class UpdateVertexLabel extends VertexUpdateFunction<Long, Long, Long> {
 	
-		public void updateVertex(Vertex<K, Long> vertex, MessageIterator<Long> inMessages) {
+		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> inMessages) {
 			Map<Long, Long> labelsWithFrequencies = new HashMap<>();
 	
 			long maxFrequency = 1;
@@ -101,9 +96,9 @@ public class LabelPropagation<K> implements GraphAlgorithm<K, Long, NullValue, D
 	/**
 	 * Sends the vertex label to all out-neighbors
 	 */
-	public static final class SendNewLabelToNeighbors<K> extends MessagingFunction<K, Long, Long, NullValue> {
+	public static final class SendNewLabelToNeighbors extends MessagingFunction<Long, Long, Long, NullValue> {
 	
-		public void sendMessages(Vertex<K, Long> vertex) {
+		public void sendMessages(Vertex<Long, Long> vertex) {
 			sendMessageToAllNeighbors(vertex.getValue());
 		}
 	}

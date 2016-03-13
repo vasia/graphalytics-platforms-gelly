@@ -42,7 +42,11 @@ import java.util.HashSet;
 public class LocalClusteringCoefficient implements
 	GraphAlgorithm<Long, Double, NullValue, DataSet<Tuple2<Long, Double>>> {
 
-	private static Boolean directed = false;
+	private final Boolean directed;
+
+	public LocalClusteringCoefficient(boolean directed) {
+		this.directed = directed;
+	}
 
 	@Override
 	public DataSet<Tuple2<Long, Double>> run(Graph<Long, Double, NullValue> graph) throws Exception {
