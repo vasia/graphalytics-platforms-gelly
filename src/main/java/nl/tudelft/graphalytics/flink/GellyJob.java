@@ -18,25 +18,35 @@
 
 package nl.tudelft.graphalytics.flink;
 
+import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.graph.Graph;
+import org.apache.flink.graph.GraphAlgorithm;
+import org.apache.flink.types.NullValue;
 
-abstract class GellyJob {
+public class GellyJob<T> {
 
-	private String graphInputPath;
-	private String outputPath;
+	private final String vertexInputPath;
+	private final String edgesInputPath;
+	private final String outputPath;
+	private final GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, T>>> algorithm;
 
-	public GellyJob(String inputPath, String outputPath) {
-		this.graphInputPath = inputPath;
+	public GellyJob(String vPath, String ePath, String outputPath, GraphAlgorithm algorithm) {
+		this.vertexInputPath = vPath;
+		this.edgesInputPath = ePath;
 		this.outputPath = outputPath;
+		this.algorithm = algorithm;
 	}
 
 	/**
 	 * Parse the input vertices and edges,
 	 * execute the Gelly job, and write back the result
 	 */
-	public void runJob() {
+	public void runJob() throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		
-		
+		Graph<Long, NullValue, NullValue> graph =
+				Graph.fromCsvReader(vertexInputPath, edgesInputPath, env).keyType(Long.class);
+		graph.run(algorithm).writeAsText(outputPath);
 	}
 }

@@ -16,3 +16,7 @@ hs_err_pid*
 
 *.DS_Store
 target
+
+*.gz
+*.iml
+*.idea

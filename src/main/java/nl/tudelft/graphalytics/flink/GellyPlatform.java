@@ -21,10 +21,8 @@ package nl.tudelft.graphalytics.flink;
 import java.util.HashMap;
 import java.util.Map;
 
-import nl.tudelft.graphalytics.domain.Algorithm;
+import nl.tudelft.graphalytics.domain.*;
 import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
-import nl.tudelft.graphalytics.domain.algorithms.ParameterFactory;
 import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
 import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
 import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
@@ -38,9 +36,6 @@ import org.apache.hadoop.fs.Path;
 
 import nl.tudelft.graphalytics.AbstractPlatform;
 import nl.tudelft.graphalytics.PlatformExecutionException;
-import nl.tudelft.graphalytics.domain.Benchmark;
-import nl.tudelft.graphalytics.domain.Graph;
-import nl.tudelft.graphalytics.domain.PlatformBenchmarkResult;
 
 public class GellyPlatform extends AbstractPlatform {
 
@@ -72,16 +67,46 @@ public class GellyPlatform extends AbstractPlatform {
 		Graph input = benchmark.getGraph();
 		AlgorithmParameters parameters = (AlgorithmParameters) benchmark.getAlgorithmParameters();
 		boolean isDirected = input.isDirected();
+		String outputPath = HDFS_DIRECTORY + "/output/" + input.getName() + "-" + algo.getName();
+		Tuple2<String, String> inputPaths = graphPaths.get(input.getName());
+
+		GellyJob job;
 
 		switch (algo.getAcronym()) {
-			case "BFS": new ScatterGatherBFS(parameters);
-			case "CDLP": new LabelPropagation(parameters, isDirected);
-			case "LCC": new LocalClusteringCoefficient(isDirected);
-			case "PR": new ScatterGatherPageRank<Long>(parameters, input.getNumberOfVertices());
-			case "SSSP": new ScatterGatherSSSP(parameters);
-			case "WCC": new ScatterGatherConnectedComponents<Long>(isDirected);
+			case "BFS": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherBFS(parameters));
+				break;
+			case "CDLP": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new LabelPropagation(parameters, isDirected));
+				break;
+			case "LCC": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new LocalClusteringCoefficient(isDirected));
+				break;
+			case "PR": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherPageRank<Long>(parameters, input.getNumberOfVertices()));
+				break;
+			case "SSSP": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherSSSP(parameters));
+				break;
+			case "WCC": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherConnectedComponents<Long>(isDirected));
+				break;
 			default: throw new PlatformExecutionException("Algorithm " + algo.getAcronym() + " is not supported!");
 		}
+
+		try {
+			job.runJob();
+
+			if(benchmark.isOutputRequired()){
+				FileSystem fs = FileSystem.get(new Configuration());
+				fs.copyToLocalFile(new Path(outputPath), new Path(benchmark.getOutputPath()));
+				fs.close();
+			}
+		} catch (Exception e) {
+			throw new PlatformExecutionException("Gelly job failed: " + e.getMessage());
+		}
+
+		return new PlatformBenchmarkResult(NestedConfiguration.empty());
 	}
 
 	@Override
