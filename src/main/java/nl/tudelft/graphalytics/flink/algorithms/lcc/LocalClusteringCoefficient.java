@@ -56,7 +56,7 @@ public class LocalClusteringCoefficient implements
 		// get all neighbors and attach as vertex value
 		DataSet<Edge<Long, NullValue>> allEdges = edges;
 		if (!directed) {
-			allEdges = graph.getUndirected().getEdges(); 
+			allEdges = graph.getUndirected().getEdges();
 		}
 
 		DataSet<Vertex<Long, HashSet<Long>>> verticesWithNeighbors = allEdges.map(
@@ -96,14 +96,14 @@ public class LocalClusteringCoefficient implements
 			}
 		});
 
-		DataSet<Tuple2<Long, Long>> verticesWithNumLinks = 
+		DataSet<Tuple2<Long, Long>> verticesWithNumLinks =
 				candidates.join(edges).where(1, 2).equalTo(0, 1)
 				.<Tuple1<Long>>projectFirst(0).map(new MapFunction<Tuple1<Long>, Tuple2<Long, Long>>() {
 					public Tuple2<Long, Long> map(Tuple1<Long> value) {
 						return new Tuple2<>(value.f0, 1l);
 					}
 				}).groupBy(0).sum(1);
-		
+
 		DataSet<Tuple2<Long, Integer>> verticesWithSize = verticesWithNeighbors.map(
 				new MapFunction<Vertex<Long,HashSet<Long>>, Tuple2<Long, Integer>>() {
 
@@ -124,11 +124,14 @@ public class LocalClusteringCoefficient implements
 							}
 				});
 
-		return graph.joinWithVertices(result, new VertexJoinFunction<Double, Double>() {
-			public Double vertexJoin(Double vertexValue, Double inputValue) {
-				return inputValue;
-			}
-		}).getVertices().map(new VertexToTuple2Map<Long, Double>());
+		return graph.joinWithVertices(result, new VJoinFun())
+				.getVertices().map(new VertexToTuple2Map<Long, Double>());
 
+	}
+
+	private static final class VJoinFun implements VertexJoinFunction<Double, Double> {
+		public Double vertexJoin(Double vertexValue, Double inputValue) {
+			return inputValue;
+		}
 	}
 }
