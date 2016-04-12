@@ -30,6 +30,13 @@
             <classifier>resources</classifier>
             <scope>runtime</scope>
         </dependency>
+        <!-- graphalytics validation -->
+        <dependency>
+            <groupId>nl.tudelft.graphalytics</groupId>
+            <artifactId>graphalytics-validation</artifactId>
+            <version>${graphalytics.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Use the Log4j2 backend for the Log4j2 and SLF4j API's used by graphalytics-core and its dependencies -->
         <dependency>
@@ -48,6 +55,11 @@
 			<artifactId>flink-java</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients_2.10</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-gelly_2.10</artifactId>

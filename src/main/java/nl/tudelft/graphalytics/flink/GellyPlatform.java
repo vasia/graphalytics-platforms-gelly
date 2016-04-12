@@ -55,7 +55,7 @@ public class GellyPlatform extends AbstractPlatform {
 		fs.copyFromLocalFile(edgePath, hdfsEdgePath);
 		fs.close();
 
-		graphPaths.put(graph.getName(), new Tuple2<String, String>(
+		graphPaths.put(graph.getName(), new Tuple2<>(
 				hdfsVertexPath.toUri().getPath(), hdfsEdgePath.toUri().getPath()));
 	}
 

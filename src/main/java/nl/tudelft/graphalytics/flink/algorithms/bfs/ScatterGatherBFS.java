@@ -32,7 +32,7 @@ import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
 
-public class ScatterGatherBFS implements GraphAlgorithm<Long, Long, NullValue, DataSet<Tuple2<Long, Long>>> {
+public class ScatterGatherBFS implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Long>>> {
 
 	private final Long srcVertexId;
 	private final Integer maxIterations;
@@ -53,7 +53,7 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, Long, NullValue, D
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Long>> run(Graph<Long, Long, NullValue> input) {
+	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> input) {
 
 		return input.mapVertices(new InitVerticesMapper(srcVertexId))
 				.runScatterGatherIteration(new VertexDistanceUpdater(), new MinDistanceMessenger(),
@@ -61,7 +61,7 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, Long, NullValue, D
 	}
 
 	@SuppressWarnings("serial")
-	public static final class InitVerticesMapper	implements MapFunction<Vertex<Long, Long>, Long> {
+	public static final class InitVerticesMapper implements MapFunction<Vertex<Long, NullValue>, Long> {
 
 		private Long srcVertexId;
 
@@ -69,7 +69,7 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, Long, NullValue, D
 			this.srcVertexId = srcId;
 		}
 
-		public Long map(Vertex<Long, Long> value) {
+		public Long map(Vertex<Long, NullValue> value) {
 			if (value.f0.equals(srcVertexId)) {
 				return 0l;
 			} else {
