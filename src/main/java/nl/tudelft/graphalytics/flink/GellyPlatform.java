@@ -80,7 +80,7 @@ public class GellyPlatform extends AbstractPlatform {
 					new LabelPropagation(parameters, isDirected));
 				break;
 			case "LCC": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new LocalClusteringCoefficient(isDirected));
+					new LocalClusteringCoefficient());
 				break;
 			case "PR": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
 					new ScatterGatherPageRank<Long>(parameters, input.getNumberOfVertices()));

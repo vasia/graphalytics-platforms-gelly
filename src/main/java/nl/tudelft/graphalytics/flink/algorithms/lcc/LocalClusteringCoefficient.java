@@ -42,22 +42,11 @@ import java.util.HashSet;
 public class LocalClusteringCoefficient implements
 	GraphAlgorithm<Long, Double, NullValue, DataSet<Tuple2<Long, Double>>> {
 
-	private final Boolean directed;
-
-	public LocalClusteringCoefficient(boolean directed) {
-		this.directed = directed;
-	}
-
 	@Override
 	public DataSet<Tuple2<Long, Double>> run(Graph<Long, Double, NullValue> graph) throws Exception {
 
 		DataSet<Edge<Long, NullValue>> edges = graph.getEdges();
-
-		// get all neighbors and attach as vertex value
-		DataSet<Edge<Long, NullValue>> allEdges = edges;
-		if (!directed) {
-			allEdges = graph.getUndirected().getEdges();
-		}
+		DataSet<Edge<Long, NullValue>> allEdges = graph.getUndirected().getEdges();
 
 		DataSet<Vertex<Long, HashSet<Long>>> verticesWithNeighbors = allEdges.map(
 				new MapFunction<Edge<Long,NullValue>, Tuple2<Long, HashSet<Long>>>() {
@@ -87,8 +76,8 @@ public class LocalClusteringCoefficient implements
 				for (int i = 0; i < neighbors.length; i++) {
 					for (int j = 0; j < neighbors.length; j++) {
 						if (i != j) {
-							outTuple.setField((long)neighbors[i], 1);
-							outTuple.setField((long)neighbors[j], 2);
+							outTuple.setField(neighbors[i], 1);
+							outTuple.setField(neighbors[j], 2);
 							out.collect(outTuple);
 						}
 					}

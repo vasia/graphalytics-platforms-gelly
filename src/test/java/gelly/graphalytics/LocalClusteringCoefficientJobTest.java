@@ -24,7 +24,7 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
 
         Graph<Long, Double, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient(true));
+        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
         return convertResult(result);
     }
 
@@ -34,7 +34,7 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
 
         Graph<Long, Double, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient(false));
+        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
         return convertResult(result);
     }
 
@@ -56,10 +56,8 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
         // get the edges
         Set<Edge<Long, NullValue>> edgeSet = new HashSet<>();
         for (Long v: vertexSet) {
-            System.err.println("*** Vertex:" + v);
             Set<Long> neighbors = graphStructure.getEdgesForVertex(v);
             for (Long n: neighbors) {
-                System.err.println("## Adding Edge: " + n);
                 edgeSet.add(new Edge<>(v, n, NullValue.getInstance()));
             }
             neighbors.clear();
