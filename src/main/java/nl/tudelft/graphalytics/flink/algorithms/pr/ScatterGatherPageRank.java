@@ -33,7 +33,7 @@ import org.apache.flink.graph.spargel.VertexUpdateFunction;
 
 public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Double, DataSet<Vertex<K, Double>>> {
 
-	private final double beta;
+	private final float beta;
 	private final int maxIterations;
 	private final long numberOfVertices;
 
@@ -64,10 +64,10 @@ public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Doubl
 	@SuppressWarnings("serial")
 	public static final class VertexRankUpdater<K> extends VertexUpdateFunction<K, Double, Double> {
 
-		private final double beta;
+		private final float beta;
 		private final long numVertices;
 		
-		public VertexRankUpdater(double beta, long numberOfVertices) {
+		public VertexRankUpdater(float beta, long numberOfVertices) {
 			this.beta = beta;
 			this.numVertices = numberOfVertices;
 		}
@@ -80,7 +80,7 @@ public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Doubl
 			}
 
 			// apply the dampening factor / random jump
-			double newRank = (beta * rankSum) + (1 - beta) / numVertices;
+			double newRank = (beta * rankSum) + (1.0 - beta) / (double) numVertices;
 			setNewVertexValue(newRank);
 		}
 	}
@@ -103,7 +103,7 @@ public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Doubl
 		public void sendMessages(Vertex<K, Double> vertex) {
 			if (getSuperstepNumber() == 1) {
 				// initialize vertex ranks
-				vertex.setValue(new Double(1.0 / numVertices));
+				vertex.setValue(new Double(1.0 / (double) numVertices));
 			}
 
 			for (Edge<K, Double> edge : getEdges()) {
