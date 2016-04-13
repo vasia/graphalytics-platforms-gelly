@@ -1,17 +1,12 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
-import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
 import nl.tudelft.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
 import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.bfs.BreadthFirstSearchOutput;
-import nl.tudelft.graphalytics.validation.algorithms.bfs.BreadthFirstSearchValidationTest;
 import nl.tudelft.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsOutput;
 import nl.tudelft.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsValidationTest;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;

@@ -62,7 +62,7 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, Double, Double, D
 			if (value.f0.equals(srcVertexId)) {
 				return 0.0;
 			} else {
-				return Double.MAX_VALUE;
+				return Double.POSITIVE_INFINITY;
 			}
 		}
 	}
