@@ -23,6 +23,8 @@ import java.util.Map;
 
 import nl.tudelft.graphalytics.domain.*;
 import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
+import nl.tudelft.graphalytics.domain.graph.PropertyList;
+import nl.tudelft.graphalytics.domain.graph.PropertyType;
 import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
 import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
 import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
@@ -45,18 +47,23 @@ public class GellyPlatform extends AbstractPlatform {
 
 	@Override
 	public void uploadGraph(Graph graph) throws Exception {
+
 		Path vertexPath = new Path(graph.getVertexFilePath());
 		Path edgePath = new Path(graph.getEdgeFilePath());
 		Path hdfsVertexPath = new Path(HDFS_DIRECTORY + "/input/" + graph.getName() + ".vertices");
 		Path hdfsEdgePath = new Path(HDFS_DIRECTORY + "/input/" + graph.getName() + ".edges");
 
-		FileSystem fs = FileSystem.get(new Configuration());
-		fs.copyFromLocalFile(vertexPath, hdfsVertexPath);
-		fs.copyFromLocalFile(edgePath, hdfsEdgePath);
-		fs.close();
+		try {
+			FileSystem fs = FileSystem.get(new Configuration());
+			fs.copyFromLocalFile(vertexPath, hdfsVertexPath);
+			fs.copyFromLocalFile(edgePath, hdfsEdgePath);
+			fs.close();
 
-		graphPaths.put(graph.getName(), new Tuple2<>(
-				hdfsVertexPath.toUri().getPath(), hdfsEdgePath.toUri().getPath()));
+			graphPaths.put(graph.getName(), new Tuple2<>(
+					hdfsVertexPath.toUri().getPath(), hdfsEdgePath.toUri().getPath()));
+		} catch (Exception e) {
+			System.out.println("** ERROR while uploading the graph: " + e.getMessage());
+		}
 	}
 
 	@Override
@@ -67,29 +74,39 @@ public class GellyPlatform extends AbstractPlatform {
 		Graph input = benchmark.getGraph();
 		AlgorithmParameters parameters = (AlgorithmParameters) benchmark.getAlgorithmParameters();
 		boolean isDirected = input.isDirected();
+
+		boolean hasEdgeValues = false;
+		//check if edges have values
+		PropertyList edgeProps = input.getEdgeProperties();
+		if (edgeProps.size() > 0 ) {
+			if (edgeProps.get(0).getType().equals(PropertyType.REAL)) {
+				hasEdgeValues = true;
+			}
+		}
 		String outputPath = HDFS_DIRECTORY + "/output/" + input.getName() + "-" + algo.getName();
 		Tuple2<String, String> inputPaths = graphPaths.get(input.getName());
 
 		GellyJob job;
 
 		switch (algo.getAcronym()) {
-			case "BFS": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherBFS(parameters));
+			case "BFS": job = new GellyJob<Long>(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherBFS(parameters), hasEdgeValues);
 				break;
-			case "CDLP": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new LabelPropagation(parameters, isDirected));
+			case "CDLP": job = new GellyJob<Long>(inputPaths.f0, inputPaths.f1, outputPath,
+					new LabelPropagation(parameters, isDirected), hasEdgeValues);
 				break;
-			case "LCC": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new LocalClusteringCoefficient());
+			case "LCC": job = new GellyJob<Double>(inputPaths.f0, inputPaths.f1, outputPath,
+					new LocalClusteringCoefficient(), hasEdgeValues);
 				break;
-			case "PR": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherPageRank<Long>(parameters, input.getNumberOfVertices()));
+			case "PR": job = new GellyJob<Double>(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherPageRank<Long>(
+							parameters, input.getNumberOfVertices()), hasEdgeValues);
 				break;
-			case "SSSP": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherSSSP(parameters));
+			case "SSSP": job = new GellyJob<Double>(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherSSSP(parameters), hasEdgeValues);
 				break;
-			case "WCC": job = new GellyJob(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherConnectedComponents<Long>(isDirected));
+			case "WCC": job = new GellyJob<Long>(inputPaths.f0, inputPaths.f1, outputPath,
+					new ScatterGatherConnectedComponents<Long>(isDirected), hasEdgeValues);
 				break;
 			default: throw new PlatformExecutionException("Algorithm " + algo.getAcronym() + " is not supported!");
 		}

@@ -25,18 +25,27 @@ import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.types.NullValue;
 
+/**
+ *
+ * @param <T> output type (vertex value type after running the algorithm)
+ */
 public class GellyJob<T> {
 
 	private final String vertexInputPath;
 	private final String edgesInputPath;
 	private final String outputPath;
-	private final GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, T>>> algorithm;
+	private final boolean hasEdgeValue;
+	private final GraphAlgorithm<Long, NullValue, ?, DataSet<Tuple2<Long, T>>> algorithm;
 
-	public GellyJob(String vPath, String ePath, String outputPath, GraphAlgorithm algorithm) {
+	public GellyJob(
+			String vPath, String ePath, String outputPath,
+			GraphAlgorithm algorithm, boolean edgeValue) {
+
 		this.vertexInputPath = vPath;
 		this.edgesInputPath = ePath;
 		this.outputPath = outputPath;
 		this.algorithm = algorithm;
+		this.hasEdgeValue = edgeValue;
 	}
 
 	/**
@@ -45,8 +54,19 @@ public class GellyJob<T> {
 	 */
 	public void runJob() throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		Graph<Long, NullValue, NullValue> graph =
-				Graph.fromCsvReader(vertexInputPath, edgesInputPath, env).keyType(Long.class);
-		graph.run(algorithm).writeAsText(outputPath);
+		if (hasEdgeValue) {
+			Graph<Long, NullValue, Double> graph =
+					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env)
+							.edgeTypes(Long.class, Double.class);
+			graph.run((GraphAlgorithm<Long, NullValue, Double, DataSet<Tuple2<Long, T>>>) algorithm)
+					.writeAsText(outputPath);
+		}
+		else {
+			Graph<Long, NullValue, NullValue> graph =
+					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env).keyType(Long.class);
+			graph.run((GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, T>>>) algorithm)
+					.writeAsText(outputPath);
+		}
+
 	}
 }
