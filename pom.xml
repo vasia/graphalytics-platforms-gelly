@@ -137,7 +137,7 @@
                             <descriptors>
                                 <descriptor>src/main/assembly/bin.xml</descriptor>
                             </descriptors>
-                            <finalName>graphalytics-${graphalytics.version}-myplatform-${project.version}</finalName>
+                            <finalName>graphalytics-${graphalytics.version}-gelly-${project.version}</finalName>
                             <tarLongFileMode>posix</tarLongFileMode>
                             <outputDirectory>${project.basedir}</outputDirectory>
                         </configuration>

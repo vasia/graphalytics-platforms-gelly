@@ -31,11 +31,11 @@
 
     <files>
         <!-- Copy the project README to the distribution with a different name to avoid conflicts -->
-        <!--<file>
+		<file>
             <source>${project.basedir}/README.md</source>
             <outputDirectory>.</outputDirectory>
-            <destName>README-graphalytics-myplatform.md</destName>
-        </file>-->
+            <destName>README-graphalytics-gelly.md</destName>
+        </file>
     </files>
 
     <dependencySets>
