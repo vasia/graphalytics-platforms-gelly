@@ -12,8 +12,7 @@
             <outputDirectory>.</outputDirectory>
             <includes>
                 <include>prepare-benchmark.sh</include>
-                <!-- Configuration files should be stored in config-template/ and can be included in the distribution by uncommenting the following line -->
-                <!--<include>config-template/**</include>-->
+                <include>config-template/**</include>
             </includes>
         </fileSet>
         <!-- Copy the fat JAR produced by maven-shade-plugin to lib/ in the distribution -->
