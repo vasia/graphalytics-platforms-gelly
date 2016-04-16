@@ -38,15 +38,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Use the Log4j2 backend for the Log4j2 and SLF4j API's used by graphalytics-core and its dependencies -->
+		<!-- Use SLF4J bindings for the Log4j2 and SLF4J API's used by graphalytics-core and its dependencies -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-to-slf4j</artifactId>
             <version>${log4j.version}</version>
         </dependency>
 
@@ -137,7 +132,7 @@
                             <descriptors>
                                 <descriptor>src/main/assembly/bin.xml</descriptor>
                             </descriptors>
-                            <finalName>graphalytics-${graphalytics.version}-myplatform-${project.version}</finalName>
+                            <finalName>graphalytics-${graphalytics.version}-gelly-${project.version}</finalName>
                             <tarLongFileMode>posix</tarLongFileMode>
                             <outputDirectory>${project.basedir}</outputDirectory>
                         </configuration>
