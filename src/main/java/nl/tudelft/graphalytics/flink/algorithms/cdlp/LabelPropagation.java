@@ -24,17 +24,20 @@ import java.util.Map.Entry;
 
 import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
 import nl.tudelft.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
 
 @SuppressWarnings("serial")
-public class LabelPropagation implements GraphAlgorithm<Long, Long, NullValue, DataSet<Vertex<Long, Long>>> {
+public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Long>>> {
 
 	private final int maxIterations;
 	private final boolean isDirected;
@@ -45,14 +48,21 @@ public class LabelPropagation implements GraphAlgorithm<Long, Long, NullValue, D
 	}
 
 	@Override
-	public DataSet<Vertex<Long, Long>> run(Graph<Long, Long, NullValue> input) {
+	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> input) {
+
+		Graph<Long, Long, NullValue> initializedInput =
+				input.mapVertices(new MapFunction<Vertex<Long, NullValue>, Long>() {
+			public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+				return vertex.getId();
+			}
+		});
 
 		if (isDirected) {
-			input = input.getUndirected();
+			initializedInput = initializedInput.getUndirected();
 		}
-		return input.runScatterGatherIteration(
+		return initializedInput.runScatterGatherIteration(
 				new UpdateVertexLabel(), new SendNewLabelToNeighbors(), maxIterations)
-				.getVertices();
+				.getVertices().map(new VertexToTuple2Map<Long, Long>());
 	}
 	
 	/**

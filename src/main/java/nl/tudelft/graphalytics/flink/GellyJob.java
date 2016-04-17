@@ -57,15 +57,20 @@ public class GellyJob<T> {
 		if (hasEdgeValue) {
 			Graph<Long, NullValue, Double> graph =
 					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env)
+							.fieldDelimiterEdges(" ")
 							.edgeTypes(Long.class, Double.class);
 			graph.run((GraphAlgorithm<Long, NullValue, Double, DataSet<Tuple2<Long, T>>>) algorithm)
 					.writeAsText(outputPath);
+			env.execute();
 		}
 		else {
 			Graph<Long, NullValue, NullValue> graph =
-					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env).keyType(Long.class);
+					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env)
+							.fieldDelimiterEdges(" ")
+							.keyType(Long.class);
 			graph.run((GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, T>>>) algorithm)
 					.writeAsText(outputPath);
+			env.execute();
 		}
 
 	}

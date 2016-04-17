@@ -106,7 +106,7 @@ public class GellyPlatform extends AbstractPlatform {
 					new ScatterGatherSSSP(parameters), hasEdgeValues);
 				break;
 			case "WCC": job = new GellyJob<Long>(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherConnectedComponents<Long>(isDirected), hasEdgeValues);
+					new ScatterGatherConnectedComponents(isDirected), hasEdgeValues);
 				break;
 			default: throw new PlatformExecutionException("Algorithm " + algo.getAcronym() + " is not supported!");
 		}
