@@ -51,11 +51,7 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> input) {
 
 		Graph<Long, Long, NullValue> initializedInput =
-				input.mapVertices(new MapFunction<Vertex<Long, NullValue>, Long>() {
-			public Long map(Vertex<Long, NullValue> vertex) throws Exception {
-				return vertex.getId();
-			}
-		});
+				input.mapVertices(new InitVertexValues());
 
 		if (isDirected) {
 			initializedInput = initializedInput.getUndirected();
@@ -113,4 +109,9 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 		}
 	}
 
+	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
+		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+			return vertex.getId();
+		}
+	}
 }

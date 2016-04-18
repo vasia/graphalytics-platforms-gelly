@@ -48,11 +48,7 @@ public class ScatterGatherConnectedComponents implements
 	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
 
 		Graph<Long, Long, NullValue> initializedInput =
-				graph.mapVertices(new MapFunction<Vertex<Long, NullValue>, Long>() {
-					public Long map(Vertex<Long, NullValue> vertex) throws Exception {
-						return vertex.getId();
-					}
-				});
+				graph.mapVertices(new InitVertexValues());
 		if (isDirected) {
 			initializedInput = initializedInput.getUndirected();
 		}
@@ -92,4 +88,9 @@ public class ScatterGatherConnectedComponents implements
 		}
 	}
 
+	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
+		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+			return vertex.getId();
+		}
+	}
 }
