@@ -22,6 +22,7 @@ import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
 import nl.tudelft.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
@@ -29,8 +30,10 @@ import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.utils.VertexToTuple2Map;
+import org.apache.flink.types.NullValue;
 
-public class ScatterGatherSSSP implements GraphAlgorithm<Long, Double, Double, DataSet<Vertex<Long, Double>>> {
+public class ScatterGatherSSSP implements GraphAlgorithm<Long, NullValue, Double, DataSet<Tuple2<Long, Double>>> {
 
 	private final long srcVertexId;
 	private final Integer maxIterations;
@@ -42,15 +45,15 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, Double, Double, D
 	}
 
 	@Override
-	public DataSet<Vertex<Long, Double>> run(Graph<Long, Double, Double> input) {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, Double> input) {
 
 		return input.mapVertices(new InitVerticesMapper(srcVertexId))
 				.runScatterGatherIteration(new VertexDistanceUpdater(), new MinDistanceMessenger(),
-				maxIterations).getVertices();
+				maxIterations).getVertices().map(new VertexToTuple2Map<Long, Double>());
 	}
 
 	@SuppressWarnings("serial")
-	public static final class InitVerticesMapper implements MapFunction<Vertex<Long, Double>, Double> {
+	public static final class InitVerticesMapper implements MapFunction<Vertex<Long, NullValue>, Double> {
 
 		private long srcVertexId;
 
@@ -58,7 +61,7 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, Double, Double, D
 			this.srcVertexId = srcId;
 		}
 
-		public Double map(Vertex<Long, Double> value) {
+		public Double map(Vertex<Long, NullValue> value) {
 			if (value.f0.equals(srcVertexId)) {
 				return 0.0;
 			} else {

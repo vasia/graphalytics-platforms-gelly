@@ -4,13 +4,11 @@ import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
 import nl.tudelft.graphalytics.validation.GraphStructure;
 import nl.tudelft.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientOutput;
 import nl.tudelft.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientValidationTest;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.Vertex;
 import org.apache.flink.types.NullValue;
 
 import java.util.*;
@@ -18,11 +16,10 @@ import java.util.*;
 public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficientValidationTest {
 
     @Override
-    //TODO: this is failing!
     public LocalClusteringCoefficientOutput executeDirectedLocalClusteringCoefficient(
             GraphStructure graphStructure) throws Exception {
 
-        Graph<Long, Double, NullValue> input = getInputGraph(graphStructure);
+        Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
         DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
         return convertResult(result);
@@ -32,26 +29,18 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
     public LocalClusteringCoefficientOutput executeUndirectedLocalClusteringCoefficient(
             GraphStructure graphStructure) throws Exception {
 
-        Graph<Long, Double, NullValue> input = getInputGraph(graphStructure);
+        Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
         DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
         return convertResult(result);
     }
 
     // helper method to create the input Gelly Graph from the GraphStructure
-    private Graph<Long, Double, NullValue> getInputGraph(GraphStructure graphStructure) {
+    private Graph<Long, NullValue, NullValue> getInputGraph(GraphStructure graphStructure) {
 
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         // get the vertices
         Set<Long> vertexSet = graphStructure.getVertices();
-
-        DataSet<Vertex<Long, Double>> vertices = env.fromCollection(vertexSet)
-                .map(new MapFunction<Long, Vertex<Long, Double>>() {
-                    @Override
-                    public Vertex<Long, Double> map(Long id) {
-                        return new Vertex<>(id, 0.0);
-                    }
-                });
 
         // get the edges
         Set<Edge<Long, NullValue>> edgeSet = new HashSet<>();
@@ -65,7 +54,7 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
 
         DataSet<Edge<Long, NullValue>> edges = env.fromCollection(edgeSet);
         // create the graph
-        return Graph.fromDataSet(vertices, edges, env);
+        return Graph.fromDataSet(edges, env);
     }
 
     // convert the Gelly result to the expected result

@@ -40,16 +40,19 @@ import java.util.HashSet;
 
 @SuppressWarnings("serial")
 public class LocalClusteringCoefficient implements
-	GraphAlgorithm<Long, Double, NullValue, DataSet<Tuple2<Long, Double>>> {
+	GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Double>>> {
 
 	@Override
-	public DataSet<Tuple2<Long, Double>> run(Graph<Long, Double, NullValue> graph) throws Exception {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
 
-		DataSet<Edge<Long, NullValue>> edges = graph.getEdges();
-		DataSet<Edge<Long, NullValue>> allEdges = graph.getUndirected().getEdges();
+		// initialize vertex values
+		Graph<Long, Double, NullValue> initGraph = graph.mapVertices(new InitVertexValues());
+
+		DataSet<Edge<Long, NullValue>> edges = initGraph.getEdges();
+		DataSet<Edge<Long, NullValue>> allEdges = initGraph.getUndirected().getEdges();
 
 		DataSet<Vertex<Long, HashSet<Long>>> verticesWithNeighbors = allEdges.map(
-				new MapFunction<Edge<Long,NullValue>, Tuple2<Long, HashSet<Long>>>() {
+				new MapFunction<Edge<Long, NullValue>, Tuple2<Long, HashSet<Long>>>() {
 					public Tuple2<Long, HashSet<Long>> map(Edge<Long, NullValue> edge) {
 						HashSet<Long> neighbors = new HashSet<>();
 						neighbors.add(edge.f1);
@@ -113,7 +116,7 @@ public class LocalClusteringCoefficient implements
 							}
 				});
 
-		return graph.joinWithVertices(result, new VJoinFun())
+		return initGraph.joinWithVertices(result, new VJoinFun())
 				.getVertices().map(new VertexToTuple2Map<Long, Double>());
 
 	}
@@ -121,6 +124,12 @@ public class LocalClusteringCoefficient implements
 	private static final class VJoinFun implements VertexJoinFunction<Double, Double> {
 		public Double vertexJoin(Double vertexValue, Double inputValue) {
 			return inputValue;
+		}
+	}
+
+	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Double> {
+		public Double map(Vertex<Long, NullValue> vertex) throws Exception {
+			return 0.0;
 		}
 	}
 }

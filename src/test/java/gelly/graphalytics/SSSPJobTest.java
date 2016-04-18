@@ -7,9 +7,10 @@ import nl.tudelft.graphalytics.validation.algorithms.sssp.SingleSourceShortestPa
 import nl.tudelft.graphalytics.validation.algorithms.sssp.SingleSourceShortestPathsValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.Vertex;
+import org.apache.flink.types.NullValue;
 
 import java.util.*;
 
@@ -20,9 +21,9 @@ public class SSSPJobTest extends SingleSourceShortestPathsValidationTest {
             PropertyGraph<Void, Double> propertyGraph,
             SingleSourceShortestPathsParameters params) throws Exception {
 
-        Graph<Long, Double, Double> input = getInputGraph(propertyGraph);
+        Graph<Long, NullValue, Double> input = getInputGraph(propertyGraph);
         // run the SSSP job
-        DataSet<Vertex<Long, Double>> result = input.run(new ScatterGatherSSSP(params));
+        DataSet<Tuple2<Long, Double>> result = input.run(new ScatterGatherSSSP(params));
         return convertResult(result);
     }
 
@@ -31,26 +32,24 @@ public class SSSPJobTest extends SingleSourceShortestPathsValidationTest {
             PropertyGraph<Void, Double> propertyGraph,
             SingleSourceShortestPathsParameters params) throws Exception {
 
-        Graph<Long, Double, Double> input = getInputGraph(propertyGraph);
+        Graph<Long, NullValue, Double> input = getInputGraph(propertyGraph);
         // run the SSSP job
-        DataSet<Vertex<Long, Double>> result = input.run(new ScatterGatherSSSP(params));
+        DataSet<Tuple2<Long, Double>> result = input.run(new ScatterGatherSSSP(params));
         return convertResult(result);
     }
 
     // helper method to create the input Gelly Graph from the GraphStructure
-    private Graph<Long, Double, Double> getInputGraph(PropertyGraph<Void, Double> graph) {
+    private Graph<Long, NullValue, Double> getInputGraph(PropertyGraph<Void, Double> graph) {
 
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         // get the vertices and edges
         Collection<PropertyGraph<Void, Double>.Vertex> vertexSet = graph.getVertices();
 
-        Set<Vertex<Long, Double>> flinkVertexSet = new HashSet<>();
         Set<Edge<Long, Double>> edgeSet = new HashSet<>();
 
         for (PropertyGraph.Vertex v: vertexSet) {
             // create a vertex
-            flinkVertexSet.add(new Vertex<>(v.getId(), Double.POSITIVE_INFINITY));
             Collection<PropertyGraph.Edge> neighbors = v.getOutgoingEdges();
             // create its edges
             for (PropertyGraph.Edge e: neighbors) {
@@ -58,19 +57,17 @@ public class SSSPJobTest extends SingleSourceShortestPathsValidationTest {
                         e.getSourceVertex().getId(), e.getDestinationVertex().getId(), (Double)e.getValue()));
             }
         }
-
-        DataSet<Vertex<Long, Double>> vertices = env.fromCollection(flinkVertexSet);
         DataSet<Edge<Long, Double>> edges = env.fromCollection(edgeSet);
         // create the graph
-        return Graph.fromDataSet(vertices, edges, env);
+        return Graph.fromDataSet(edges, env);
     }
 
     // convert the Gelly result to the expected result
-    private SingleSourceShortestPathsOutput convertResult(DataSet<Vertex<Long, Double>> result) throws Exception {
+    private SingleSourceShortestPathsOutput convertResult(DataSet<Tuple2<Long, Double>> result) throws Exception {
         // convert the result to the expected output
-        List<Vertex<Long, Double>> resList = result.collect();
+        List<Tuple2<Long, Double>> resList = result.collect();
         Map<Long, Double> ssspResults = new HashMap<>();
-        for (Vertex<Long, Double> t: resList) {
+        for (Tuple2<Long, Double> t: resList) {
             ssspResults.put(t.f0, t.f1);
         }
         return new SingleSourceShortestPathsOutput(ssspResults);
