@@ -99,7 +99,7 @@ public class GellyPlatform extends AbstractPlatform {
 					new LocalClusteringCoefficient(), hasEdgeValues);
 				break;
 			case "PR": job = new GellyJob<Double>(inputPaths.f0, inputPaths.f1, outputPath,
-					new ScatterGatherPageRank<Long>(
+					new ScatterGatherPageRank(
 							parameters, input.getNumberOfVertices()), hasEdgeValues);
 				break;
 			case "SSSP": job = new GellyJob<Double>(inputPaths.f0, inputPaths.f1, outputPath,

@@ -20,6 +20,7 @@ package nl.tudelft.graphalytics.flink.algorithms.pr;
 
 import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
 import nl.tudelft.graphalytics.domain.algorithms.PageRankParameters;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
@@ -30,8 +31,9 @@ import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.types.NullValue;
 
-public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Double, DataSet<Vertex<K, Double>>> {
+public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Double>>> {
 
 	private final float beta;
 	private final int maxIterations;
@@ -45,15 +47,17 @@ public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Doubl
 	}
 
 	@Override
-	public DataSet<Vertex<K, Double>> run(Graph<K, Double, Double> network) throws Exception {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) throws Exception {
 
-		DataSet<Tuple2<K, Long>> vertexOutDegrees = network.outDegrees();
+		DataSet<Tuple2<Long, Long>> vertexOutDegrees = network.outDegrees();
 
-		Graph<K, Double, Double> networkWithWeights = network
+		Graph<Long, Double, Double> networkWithWeights = network
+				.mapVertices(new InitVertexValues())
+				.mapEdges(new InitEdgeValues())
 				.joinWithEdgesOnSource(vertexOutDegrees, new InitWeights());
 
-		return networkWithWeights.runScatterGatherIteration(new VertexRankUpdater<K>(beta, numberOfVertices),
-				new RankMessenger<K>(numberOfVertices), maxIterations)
+		return networkWithWeights.runScatterGatherIteration(new VertexRankUpdater(beta, numberOfVertices),
+				new RankMessenger(numberOfVertices), maxIterations)
 				.getVertices();
 	}
 
@@ -120,4 +124,15 @@ public class ScatterGatherPageRank<K> implements GraphAlgorithm<K, Double, Doubl
 		}
 	}
 
+	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Double> {
+		public Double map(Vertex<Long, NullValue> vertex) throws Exception {
+			return 1.0;
+		}
+	}
+
+	private static final class InitEdgeValues implements MapFunction<Edge<Long, NullValue>, Double> {
+		public Double map(Edge<Long, NullValue> edge) throws Exception {
+			return 1.0;
+		}
+	}
 }
