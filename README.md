@@ -11,6 +11,15 @@ Please refer to the documentation of the [Graphalytics Repository](https://githu
 - Weakly Connected Components
 
 ## Gelly-specific Benchmark Configuration
+Gelly-specific configuration options should be set in the *gelly.properties* file.
+
+- *hadoop.config.home*: The hadoop configuration path
+- *gelly.hdfs.host*: The address and port of the HDFS namenode
+- *gelly.job.parallelism*: The Flink environment default parallelism
+- *gelly.job.manager.address*: The Flink job manager address
+- *gelly.job.manager.port*: The Flink job manager port
+- *gelly.job.taskmanager.memory*: The available memory per task manager (in MB)
+- *gelly.graphalytics.jar*: The graphalytics-gelly jar path
 
 ## References
 - [Apache Flink](https://flink.apache.org/)
