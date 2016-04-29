@@ -36,11 +36,13 @@ public class GellyJob<T> {
 	private final String outputPath;
 	private final boolean hasEdgeValue;
 	private final GraphAlgorithm<Long, NullValue, ?, DataSet<Tuple2<Long, T>>> algorithm;
+	private final ExecutionEnvironment env;
 
-	public GellyJob(
+	public GellyJob(ExecutionEnvironment env,
 			String vPath, String ePath, String outputPath,
 			GraphAlgorithm algorithm, boolean edgeValue) {
 
+		this.env = env;
 		this.vertexInputPath = vPath;
 		this.edgesInputPath = ePath;
 		this.outputPath = outputPath;
@@ -53,7 +55,7 @@ public class GellyJob<T> {
 	 * execute the Gelly job, and write back the result
 	 */
 	public void runJob() throws Exception {
-		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+
 		if (hasEdgeValue) {
 			Graph<Long, NullValue, Double> graph =
 					Graph.fromCsvReader(vertexInputPath, edgesInputPath, env)
