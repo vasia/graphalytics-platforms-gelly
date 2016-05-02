@@ -27,6 +27,7 @@ import nl.tudelft.graphalytics.domain.graph.PropertyList;
 import nl.tudelft.graphalytics.domain.graph.PropertyType;
 import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
 import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
+import nl.tudelft.graphalytics.flink.algorithms.lcc.LCCWithTriangles;
 import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
 import nl.tudelft.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
 import nl.tudelft.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
@@ -160,7 +161,8 @@ public class GellyPlatform extends AbstractPlatform {
 					new LabelPropagation(parameters, isDirected), hasEdgeValues);
 				break;
 			case "LCC": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
-					new LocalClusteringCoefficient(), hasEdgeValues);
+					new LCCWithTriangles(), hasEdgeValues);
+					//new LocalClusteringCoefficient(), hasEdgeValues);
 				break;
 			case "PR": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new ScatterGatherPageRank(
