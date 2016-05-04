@@ -22,7 +22,7 @@ public class LCCWithTrianglesJobTest extends LocalClusteringCoefficientValidatio
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LCCWithTriangles());
+        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LCCWithTriangles(true ));
         return convertResult(result);
     }
 
@@ -32,7 +32,7 @@ public class LCCWithTrianglesJobTest extends LocalClusteringCoefficientValidatio
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LCCWithTriangles());
+        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LCCWithTriangles(false));
         return convertResult(result);
     }
 

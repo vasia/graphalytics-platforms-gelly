@@ -161,7 +161,7 @@ public class GellyPlatform extends AbstractPlatform {
 					new LabelPropagation(parameters, isDirected), hasEdgeValues);
 				break;
 			case "LCC": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
-					new LCCWithTriangles(), hasEdgeValues);
+					new LCCWithTriangles(isDirected), hasEdgeValues);
 					//new LocalClusteringCoefficient(), hasEdgeValues);
 				break;
 			case "PR": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
