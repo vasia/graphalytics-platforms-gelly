@@ -9,6 +9,7 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
+import org.apache.flink.types.DoubleValue;
 import org.apache.flink.types.NullValue;
 
 import java.util.*;
@@ -21,7 +22,7 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
+        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LocalClusteringCoefficient(true ));
         return convertResult(result);
     }
 
@@ -31,7 +32,7 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the LCC job
-        DataSet<Tuple2<Long, Double>> result = input.run(new LocalClusteringCoefficient());
+        DataSet<Tuple2<Long, DoubleValue>> result = input.run(new LocalClusteringCoefficient(false));
         return convertResult(result);
     }
 
@@ -58,12 +59,12 @@ public class LocalClusteringCoefficientJobTest extends LocalClusteringCoefficien
     }
 
     // convert the Gelly result to the expected result
-    private LocalClusteringCoefficientOutput convertResult(DataSet<Tuple2<Long, Double>> result) throws Exception {
+    private LocalClusteringCoefficientOutput convertResult(DataSet<Tuple2<Long, DoubleValue>> result) throws Exception {
         // convert the result to the expected output
-        List<Tuple2<Long, Double>> resList = result.collect();
+        List<Tuple2<Long, DoubleValue>> resList = result.collect();
         Map<Long, Double> lccResults = new HashMap<>();
-        for (Tuple2<Long, Double> t: resList) {
-            lccResults.put(t.f0, t.f1);
+        for (Tuple2<Long, DoubleValue> t: resList) {
+            lccResults.put(t.f0, t.f1.getValue());
         }
         return new LocalClusteringCoefficientOutput(lccResults);
     }

@@ -27,7 +27,6 @@ import nl.tudelft.graphalytics.domain.graph.PropertyList;
 import nl.tudelft.graphalytics.domain.graph.PropertyType;
 import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
 import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
-import nl.tudelft.graphalytics.flink.algorithms.lcc.LCCWithTriangles;
 import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
 import nl.tudelft.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
 import nl.tudelft.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
@@ -154,24 +153,23 @@ public class GellyPlatform extends AbstractPlatform {
 		GellyJob job;
 
 		switch (algo.getAcronym()) {
-			case "BFS": job = new GellyJob<Long>(remoteEnv, vertexPath, edgesPath, outputPath,
+			case "BFS": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new ScatterGatherBFS(parameters), hasEdgeValues);
 				break;
-			case "CDLP": job = new GellyJob<Long>(remoteEnv, vertexPath, edgesPath, outputPath,
+			case "CDLP": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new LabelPropagation(parameters, isDirected), hasEdgeValues);
 				break;
-			case "LCC": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
-					new LCCWithTriangles(isDirected), hasEdgeValues);
-					//new LocalClusteringCoefficient(), hasEdgeValues);
+			case "LCC": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
+					new LocalClusteringCoefficient(isDirected), hasEdgeValues);
 				break;
-			case "PR": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
+			case "PR": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new ScatterGatherPageRank(
 							parameters, input.getNumberOfVertices()), hasEdgeValues);
 				break;
-			case "SSSP": job = new GellyJob<Double>(remoteEnv, vertexPath, edgesPath, outputPath,
+			case "SSSP": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new ScatterGatherSSSP(parameters), hasEdgeValues);
 				break;
-			case "WCC": job = new GellyJob<Long>(remoteEnv, vertexPath, edgesPath, outputPath,
+			case "WCC": job = new GellyJob<>(remoteEnv, vertexPath, edgesPath, outputPath,
 					new ScatterGatherConnectedComponents(isDirected), hasEdgeValues);
 				break;
 			default: throw new PlatformExecutionException("Algorithm " + algo.getAcronym() + " is not supported!");

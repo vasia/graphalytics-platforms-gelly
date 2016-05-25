@@ -47,6 +47,7 @@ public class ScatterGatherConnectedComponents implements
 	@Override
 	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
 
+		//TODO: make the optimization of taking the min value and group by
 		Graph<Long, Long, NullValue> initializedInput =
 				graph.mapVertices(new InitVertexValues());
 		if (isDirected) {

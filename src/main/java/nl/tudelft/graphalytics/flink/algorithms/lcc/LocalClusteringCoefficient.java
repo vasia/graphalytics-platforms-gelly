@@ -18,118 +18,138 @@
 
 package nl.tudelft.graphalytics.flink.algorithms.lcc;
 
+import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.functions.FlatJoinFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.DataSet;
-import org.apache.flink.api.java.tuple.Tuple1;
+import org.apache.flink.api.java.functions.FunctionAnnotation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.graph.Edge;
-import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.GraphAlgorithm;
-import org.apache.flink.graph.Vertex;
-import org.apache.flink.graph.VertexJoinFunction;
-import org.apache.flink.graph.utils.Tuple2ToVertexMap;
-import org.apache.flink.graph.utils.VertexToTuple2Map;
+import org.apache.flink.graph.*;
+import org.apache.flink.graph.library.TriangleEnumerator;
+import org.apache.flink.types.DoubleValue;
+import org.apache.flink.types.LongValue;
 import org.apache.flink.types.NullValue;
 import org.apache.flink.util.Collector;
 
-import java.util.HashSet;
-
 @SuppressWarnings("serial")
 public class LocalClusteringCoefficient implements
-	GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Double>>> {
+	GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, DoubleValue>>> {
+
+	private final boolean directed;
+
+	public LocalClusteringCoefficient(boolean isDirected) {
+		directed = isDirected;
+	}
 
 	@Override
-	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
+	public DataSet<Tuple2<Long, DoubleValue>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
 
-		// initialize vertex values
-		Graph<Long, Double, NullValue> initGraph = graph.mapVertices(new InitVertexValues());
+		DataSet<Tuple3<Long, Long, Long>> triangles = graph.run(new TriangleEnumerator<Long, NullValue, NullValue>());
+		DataSet<Tuple2<Long, LongValue>> trianglesPerVertex;
 
-		DataSet<Edge<Long, NullValue>> edges = initGraph.getEdges();
-		DataSet<Edge<Long, NullValue>> allEdges = initGraph.getUndirected().getEdges();
-
-		DataSet<Vertex<Long, HashSet<Long>>> verticesWithNeighbors = allEdges.map(
-				new MapFunction<Edge<Long, NullValue>, Tuple2<Long, HashSet<Long>>>() {
-					public Tuple2<Long, HashSet<Long>> map(Edge<Long, NullValue> edge) {
-						HashSet<Long> neighbors = new HashSet<>();
-						neighbors.add(edge.f1);
-						return new Tuple2<>(edge.f0, neighbors);
-					}
-				}).groupBy(0).reduce(new ReduceFunction<Tuple2<Long,HashSet<Long>>>() {
-					public Tuple2<Long, HashSet<Long>> reduce(
-							Tuple2<Long, HashSet<Long>> set1,
-							Tuple2<Long, HashSet<Long>> set2) {
-						set1.f1.addAll(set2.f1);
-						return set1;
-					}
-				}).map(new Tuple2ToVertexMap<Long, HashSet<Long>>());
-
-		DataSet<Tuple3<Long, Long, Long>> candidates = verticesWithNeighbors.flatMap(
-				new FlatMapFunction<Vertex<Long,HashSet<Long>>, Tuple3<Long, Long, Long>>() {
-					public void flatMap(Vertex<Long, HashSet<Long>> vertex,
-							Collector<Tuple3<Long, Long, Long>> out) {
-
-			    Object[] neighbors = vertex.f1.toArray();
-				Tuple3<Long, Long, Long> outTuple = new Tuple3<>();
-				outTuple.setField(vertex.f0, 0);
-
-				for (int i = 0; i < neighbors.length; i++) {
-					for (int j = 0; j < neighbors.length; j++) {
-						if (i != j) {
-							outTuple.setField(neighbors[i], 1);
-							outTuple.setField(neighbors[j], 2);
-							out.collect(outTuple);
+		if (directed) {
+			// create triangle permutations
+			DataSet<Tuple3<Long, Long, Long>> possibleTriangles =
+			triangles.flatMap(new FlatMapFunction<Tuple3<Long, Long, Long>, Tuple3<Long, Long, Long>>() {
+				@Override
+				public void flatMap(Tuple3<Long, Long, Long> t, Collector<Tuple3<Long, Long, Long>> out) {
+					out.collect(new Tuple3<>(t.f0, t.f1, t.f2));
+					out.collect(new Tuple3<>(t.f0, t.f2, t.f1));
+					out.collect(new Tuple3<>(t.f1, t.f0, t.f2));
+					out.collect(new Tuple3<>(t.f1, t.f2, t.f0));
+					out.collect(new Tuple3<>(t.f2, t.f1, t.f0));
+					out.collect(new Tuple3<>(t.f2, t.f0, t.f1));
+				}
+			});
+			// join with edges to only keep the actually present triangles
+			trianglesPerVertex = possibleTriangles.join(graph.getEdges()).where(1, 2).equalTo(0, 1)
+					.with(new FlatJoinFunction<Tuple3<Long, Long, Long>, Edge<Long, NullValue>, Tuple2<Long, LongValue>>() {
+						private final LongValue one = new LongValue(1);
+						@Override
+						public void join(Tuple3<Long, Long, Long> t, Edge<Long, NullValue> edge, Collector<Tuple2<Long, LongValue>> out) {
+							out.collect(new Tuple2<>(t.f0, one));
 						}
+					}).withForwardedFieldsFirst("0");
+		}
+		else {
+			trianglesPerVertex = triangles.flatMap(new FlatMapFunction<Tuple3<Long, Long, Long>, Tuple2<Long, LongValue>>() {
+				private final LongValue one = new LongValue(1);
+
+				@Override
+				public void flatMap(Tuple3<Long, Long, Long> t, Collector<Tuple2<Long, LongValue>> out) {
+					out.collect(new Tuple2<>(t.f0, one));
+					out.collect(new Tuple2<>(t.f1, one));
+					out.collect(new Tuple2<>(t.f2, one));
+				}
+			});
+
+		}
+
+		// count triangles per vertex
+		DataSet<Tuple2<Long, LongValue>> verticesWithTriangleCounts = trianglesPerVertex.groupBy(0).sum(1);
+
+		// get vertex degrees
+		DataSet<Tuple2<Long, Long>> degrees;
+
+		if (directed) {
+			// for directed CC, we need to count the number of neighbors, not the degree
+			DataSet<Edge<Long, NullValue>> allEdges = graph.getUndirected().getEdges().distinct(0, 1);
+			Graph<Long, NullValue, NullValue> g2 = Graph.fromDataSet(graph.getVertices(), allEdges, graph.getContext());
+			degrees = g2.inDegrees();
+		}
+		else {
+			degrees = graph.getDegrees();
+		}
+
+		// compute clustering coefficient
+		DataSet<Tuple2<Long, DoubleValue>> result = verticesWithTriangleCounts.coGroup(degrees).where(0).equalTo(0)
+				.with(new ComputeClusteringCoefficient(directed));
+
+		return result;
+	}
+
+	@FunctionAnnotation.ForwardedFieldsFirst("0")
+	private static final class ComputeClusteringCoefficient implements
+			CoGroupFunction<Tuple2<Long, LongValue>, Tuple2<Long, Long>, Tuple2<Long, DoubleValue>> {
+
+		private final boolean directed;
+		private DoubleValue cc = new DoubleValue();
+		Tuple2<Long, DoubleValue> result = new Tuple2<>();
+
+		public ComputeClusteringCoefficient(boolean isDirected) {
+			directed = isDirected;
+		}
+
+		@Override
+		public void coGroup(Iterable<Tuple2<Long, LongValue>> vertexWithCount, Iterable<Tuple2<Long, Long>> vertexWithDegree,
+							Collector<Tuple2<Long, DoubleValue>> out) throws Exception {
+
+			long degree;
+			long vertexID;
+			long denominator = 0;
+			cc.setValue(0);
+
+			for (Tuple2<Long, Long> t : vertexWithDegree) {
+				vertexID = t.f0;
+				degree = directed ? t.f1 : t.f1/2;
+				denominator = degree * (degree - 1);
+				result.setField(vertexID, 0);
+			}
+
+			for (Tuple2<Long, LongValue> t : vertexWithCount) {
+				if (denominator > 0) {
+					if (directed) {
+						cc.setValue((double) t.f1.getValue() / (double) denominator);
+					}
+					else {
+						cc.setValue((double) (2 * t.f1.getValue()) / (double) denominator);
 					}
 				}
 			}
-		});
 
-		DataSet<Tuple2<Long, Long>> verticesWithNumLinks =
-				candidates.join(edges).where(1, 2).equalTo(0, 1)
-				.<Tuple1<Long>>projectFirst(0).map(new MapFunction<Tuple1<Long>, Tuple2<Long, Long>>() {
-					public Tuple2<Long, Long> map(Tuple1<Long> value) {
-						return new Tuple2<>(value.f0, 1l);
-					}
-				}).groupBy(0).sum(1);
-
-		DataSet<Tuple2<Long, Integer>> verticesWithSize = verticesWithNeighbors.map(
-				new MapFunction<Vertex<Long,HashSet<Long>>, Tuple2<Long, Integer>>() {
-
-					public Tuple2<Long, Integer> map(Vertex<Long, HashSet<Long>> vertex) {
-						return new Tuple2<>(vertex.getId(), vertex.getValue().size());
-					}
-		});
-
-		DataSet<Tuple2<Long, Double>> result = verticesWithNumLinks.join(verticesWithSize)
-				.where(0).equalTo(0).with(
-						new FlatJoinFunction<Tuple2<Long, Long>, Tuple2<Long, Integer>, Tuple2<Long, Double>>() {
-							public void join(Tuple2<Long, Long> vertexWithNumLinks,
-									Tuple2<Long, Integer> vertexWithSetSize,
-									Collector<Tuple2<Long, Double>> out) {
-								out.collect(new Tuple2<>(vertexWithNumLinks.f0,
-										(double)vertexWithNumLinks.f1 /
-										(double)(vertexWithSetSize.f1 * (vertexWithSetSize.f1 - 1))));
-							}
-				});
-
-		return initGraph.joinWithVertices(result, new VJoinFun())
-				.getVertices().map(new VertexToTuple2Map<Long, Double>());
-
-	}
-
-	private static final class VJoinFun implements VertexJoinFunction<Double, Double> {
-		public Double vertexJoin(Double vertexValue, Double inputValue) {
-			return inputValue;
-		}
-	}
-
-	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Double> {
-		public Double map(Vertex<Long, NullValue> vertex) throws Exception {
-			return 0.0;
+			result.setField(cc, 1);
+			out.collect(result);
 		}
 	}
 }
