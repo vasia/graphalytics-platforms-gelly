@@ -23,6 +23,6 @@ Gelly-specific configuration options should be set in the *gelly.properties* fil
 
 ## References
 - [Apache Flink](https://flink.apache.org/)
-- [Gelly Guide](https://ci.apache.org/projects/flink/flink-docs-master/libs/gelly_guide.html)
+- [Gelly Guide](https://ci.apache.org/projects/flink/flink-docs-master/dev/libs/gelly/index.html)
 - [Graphalytics paper](https://dl.acm.org/citation.cfm?id=2764954)
 - [Graphalytics Repository](https://github.com/tudelft-atlarge/graphalytics)
