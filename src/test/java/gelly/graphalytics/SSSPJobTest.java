@@ -1,10 +1,10 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
-import nl.tudelft.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
-import nl.tudelft.graphalytics.util.graph.PropertyGraph;
-import nl.tudelft.graphalytics.validation.algorithms.sssp.SingleSourceShortestPathsOutput;
-import nl.tudelft.graphalytics.validation.algorithms.sssp.SingleSourceShortestPathsValidationTest;
+import science.atlarge.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
+import science.atlarge.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
+import science.atlarge.graphalytics.util.graph.PropertyGraph;
+import science.atlarge.graphalytics.validation.algorithms.sssp.SingleSourceShortestPathsOutput;
+import science.atlarge.graphalytics.validation.algorithms.sssp.SingleSourceShortestPathsValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;

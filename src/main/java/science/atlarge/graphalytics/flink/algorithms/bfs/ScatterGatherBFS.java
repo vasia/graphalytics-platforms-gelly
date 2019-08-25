@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.bfs;
+package science.atlarge.graphalytics.flink.algorithms.bfs;
 
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;

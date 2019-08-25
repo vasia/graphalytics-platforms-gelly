@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.wcc;
+package science.atlarge.graphalytics.flink.algorithms.wcc;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;

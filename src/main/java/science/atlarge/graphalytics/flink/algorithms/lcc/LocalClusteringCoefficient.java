@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.lcc;
+package science.atlarge.graphalytics.flink.algorithms.lcc;
 
 import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.functions.FlatJoinFunction;

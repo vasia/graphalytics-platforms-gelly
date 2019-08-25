@@ -1,10 +1,10 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.domain.algorithms.PageRankParameters;
-import nl.tudelft.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
-import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.pr.PageRankOutput;
-import nl.tudelft.graphalytics.validation.algorithms.pr.PageRankValidationTest;
+import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
+import science.atlarge.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.pr.PageRankOutput;
+import science.atlarge.graphalytics.validation.algorithms.pr.PageRankValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;

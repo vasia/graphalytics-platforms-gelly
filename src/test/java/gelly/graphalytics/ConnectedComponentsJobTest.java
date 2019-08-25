@@ -1,16 +1,14 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
-import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsOutput;
-import nl.tudelft.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsValidationTest;
-import org.apache.flink.api.common.functions.MapFunction;
+import science.atlarge.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsOutput;
+import science.atlarge.graphalytics.validation.algorithms.wcc.WeaklyConnectedComponentsValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.Vertex;
 import org.apache.flink.types.NullValue;
 
 import java.util.*;

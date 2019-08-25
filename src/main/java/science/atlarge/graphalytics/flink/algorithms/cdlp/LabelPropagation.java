@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.cdlp;
+package science.atlarge.graphalytics.flink.algorithms.cdlp;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;

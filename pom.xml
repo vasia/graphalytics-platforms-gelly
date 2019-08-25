@@ -8,34 +8,38 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<graphalytics.version>0.3-SNAPSHOT</graphalytics.version>
-		<flink.version>1.1-SNAPSHOT</flink.version>
+        <graphalytics.version>1.0.0</graphalytics.version>
+		<flink.version>1.0.3</flink.version>
 		<hadoop.version>2.4.1</hadoop.version>
         <log4j.version>2.5</log4j.version>
     </properties>
 
 	<dependencies>
- 		<!-- graphalytics-core includes everything required to integrate with Graphalytics -->
+
+        <!-- Graphalytics dependencies: core + resources, validation -->
         <dependency>
-            <groupId>nl.tudelft.graphalytics</groupId>
+            <groupId>science.atlarge.graphalytics</groupId>
             <artifactId>graphalytics-core</artifactId>
             <version>${graphalytics.version}</version>
         </dependency>
-        <!-- graphalytics-core:resources bundles all scripts and configuration files required to run Graphalytics -->
         <dependency>
-            <groupId>nl.tudelft.graphalytics</groupId>
+            <groupId>science.atlarge.graphalytics</groupId>
             <artifactId>graphalytics-core</artifactId>
             <version>${graphalytics.version}</version>
             <type>tar.gz</type>
             <classifier>resources</classifier>
             <scope>runtime</scope>
         </dependency>
-        <!-- graphalytics validation -->
         <dependency>
-            <groupId>nl.tudelft.graphalytics</groupId>
+            <groupId>science.atlarge.graphalytics</groupId>
             <artifactId>graphalytics-validation</artifactId>
             <version>${graphalytics.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>science.atlarge.graphalytics</groupId>
+            <artifactId>graphalytics-validation</artifactId>
+            <version>${graphalytics.version}</version>
         </dependency>
 
 		<!-- Use SLF4J bindings for the Log4j2 and SLF4J API's used by graphalytics-core and its dependencies -->
@@ -69,7 +73,21 @@
 		</dependency>
 	</dependencies>
 
- <build>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <id>graphalytics</id>
+            <name>Graphalytics</name>
+            <url>https://atlarge.ewi.tudelft.nl/graphalytics/mvn</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+    <build>
         <plugins>
             <!-- Java compiler settings -->
             <plugin>
