@@ -45,7 +45,7 @@ public class ScatterGatherConnectedComponents implements
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
+	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) {
 
 		//TODO: make the optimization of taking the min value and group by
 		Graph<Long, Long, NullValue> initializedInput =
@@ -67,7 +67,7 @@ public class ScatterGatherConnectedComponents implements
 	public static final class CCUpdater extends GatherFunction<Long, Long, Long> {
 
 		@Override
-		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> messages) throws Exception {
+		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> messages) {
 			long min = Long.MAX_VALUE;
 
 			for (long msg : messages) {
@@ -86,13 +86,13 @@ public class ScatterGatherConnectedComponents implements
 	public static final class CCMessenger extends ScatterFunction<Long, Long, Long, NullValue> {
 
 		@Override
-		public void sendMessages(Vertex<Long, Long> vertex) throws Exception {
+		public void sendMessages(Vertex<Long, Long> vertex) {
 			sendMessageToAllNeighbors(vertex.getValue());
 		}
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
-		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Long map(Vertex<Long, NullValue> vertex) {
 			return vertex.getId();
 		}
 	}

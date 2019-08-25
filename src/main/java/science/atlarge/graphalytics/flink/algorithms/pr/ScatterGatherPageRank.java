@@ -48,7 +48,7 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) throws Exception {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) {
 
 		DataSet<Tuple2<Long, LongValue>> vertexOutDegrees = network.outDegrees();
 
@@ -128,13 +128,13 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Double> {
-		public Double map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Double map(Vertex<Long, NullValue> vertex) {
 			return 1.0;
 		}
 	}
 
 	private static final class InitEdgeValues implements MapFunction<Edge<Long, NullValue>, Double> {
-		public Double map(Edge<Long, NullValue> edge) throws Exception {
+		public Double map(Edge<Long, NullValue> edge) {
 			return 1.0;
 		}
 	}

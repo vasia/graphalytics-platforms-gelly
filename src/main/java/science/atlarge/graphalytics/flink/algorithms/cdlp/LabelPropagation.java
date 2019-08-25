@@ -112,7 +112,7 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
-		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Long map(Vertex<Long, NullValue> vertex) {
 			return vertex.getId();
 		}
 	}
