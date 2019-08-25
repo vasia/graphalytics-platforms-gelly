@@ -1,5 +1,6 @@
 package gelly.graphalytics;
 
+import org.junit.Ignore;
 import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
 import science.atlarge.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
 import science.atlarge.graphalytics.validation.GraphStructure;
@@ -14,6 +15,7 @@ import org.apache.flink.types.NullValue;
 
 import java.util.*;
 
+@Ignore
 public class GatherScatterPageRankJobTest extends PageRankValidationTest {
 
     @Override
