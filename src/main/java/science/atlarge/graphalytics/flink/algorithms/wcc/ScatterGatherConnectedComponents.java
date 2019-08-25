@@ -24,9 +24,9 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
 
@@ -54,7 +54,9 @@ public class ScatterGatherConnectedComponents implements
 			initializedInput = initializedInput.getUndirected();
 		}
 		return initializedInput.runScatterGatherIteration(
-				new CCUpdater(), new CCMessenger(), maxIterations)
+					new CCMessenger(),
+					new CCUpdater(),
+					maxIterations)
 				.getVertices().map(new VertexToTuple2Map<Long, Long>());
 	}
 
@@ -62,7 +64,7 @@ public class ScatterGatherConnectedComponents implements
 	 * Updates the value of a vertex by picking the minimum neighbor ID out of all the incoming messages.
 	 */
 	@SuppressWarnings("serial")
-	public static final class CCUpdater extends VertexUpdateFunction<Long, Long, Long> {
+	public static final class CCUpdater extends GatherFunction<Long, Long, Long> {
 
 		@Override
 		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> messages) throws Exception {
@@ -81,7 +83,7 @@ public class ScatterGatherConnectedComponents implements
 	 * Distributes the minimum ID associated with a given vertex among all the target vertices.
 	 */
 	@SuppressWarnings("serial")
-	public static final class CCMessenger extends MessagingFunction<Long, Long, Long, NullValue> {
+	public static final class CCMessenger extends ScatterFunction<Long, Long, Long, NullValue> {
 
 		@Override
 		public void sendMessages(Vertex<Long, Long> vertex) throws Exception {

@@ -18,8 +18,6 @@
 
 package science.atlarge.graphalytics.flink.algorithms.sssp;
 
-import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
-import science.atlarge.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -27,11 +25,13 @@ import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.SingleSourceShortestPathsParameters;
 
 public class ScatterGatherSSSP implements GraphAlgorithm<Long, NullValue, Double, DataSet<Tuple2<Long, Double>>> {
 
@@ -48,8 +48,11 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, NullValue, Double
 	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, Double> input) {
 
 		return input.mapVertices(new InitVerticesMapper(srcVertexId))
-				.runScatterGatherIteration(new VertexDistanceUpdater(), new MinDistanceMessenger(),
-				maxIterations).getVertices().map(new VertexToTuple2Map<Long, Double>());
+				.runScatterGatherIteration(
+					new MinDistanceMessenger(),
+					new VertexDistanceUpdater(),
+					maxIterations
+				).getVertices().map(new VertexToTuple2Map<Long, Double>());
 	}
 
 	@SuppressWarnings("serial")
@@ -76,7 +79,7 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, NullValue, Double
 	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class VertexDistanceUpdater extends VertexUpdateFunction<Long, Double, Double> {
+	public static final class VertexDistanceUpdater extends GatherFunction<Long, Double, Double> {
 
 		@Override
 		public void updateVertex(Vertex<Long, Double> vertex,
@@ -102,7 +105,7 @@ public class ScatterGatherSSSP implements GraphAlgorithm<Long, NullValue, Double
 	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class MinDistanceMessenger extends MessagingFunction<Long, Double, Double, Double> {
+	public static final class MinDistanceMessenger extends ScatterFunction<Long, Double, Double, Double> {
 
 		@Override
 		public void sendMessages(Vertex<Long, Double> vertex) {
