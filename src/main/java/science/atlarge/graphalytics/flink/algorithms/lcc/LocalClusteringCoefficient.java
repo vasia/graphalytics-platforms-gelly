@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.lcc;
+package science.atlarge.graphalytics.flink.algorithms.lcc;
 
 import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.functions.FlatJoinFunction;
@@ -25,7 +25,9 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.functions.FunctionAnnotation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.graph.*;
+import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
+import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.library.TriangleEnumerator;
 import org.apache.flink.types.DoubleValue;
 import org.apache.flink.types.LongValue;
@@ -90,7 +92,7 @@ public class LocalClusteringCoefficient implements
 		DataSet<Tuple2<Long, LongValue>> verticesWithTriangleCounts = trianglesPerVertex.groupBy(0).sum(1);
 
 		// get vertex degrees
-		DataSet<Tuple2<Long, Long>> degrees;
+		DataSet<Tuple2<Long, LongValue>> degrees;
 
 		if (directed) {
 			// for directed CC, we need to count the number of neighbors, not the degree
@@ -111,7 +113,7 @@ public class LocalClusteringCoefficient implements
 
 	@FunctionAnnotation.ForwardedFieldsFirst("0")
 	private static final class ComputeClusteringCoefficient implements
-			CoGroupFunction<Tuple2<Long, LongValue>, Tuple2<Long, Long>, Tuple2<Long, DoubleValue>> {
+			CoGroupFunction<Tuple2<Long, LongValue>, Tuple2<Long, LongValue>, Tuple2<Long, DoubleValue>> {
 
 		private final boolean directed;
 		private DoubleValue cc = new DoubleValue();
@@ -122,7 +124,7 @@ public class LocalClusteringCoefficient implements
 		}
 
 		@Override
-		public void coGroup(Iterable<Tuple2<Long, LongValue>> vertexWithCount, Iterable<Tuple2<Long, Long>> vertexWithDegree,
+		public void coGroup(Iterable<Tuple2<Long, LongValue>> vertexWithCount, Iterable<Tuple2<Long, LongValue>> vertexWithDegree,
 							Collector<Tuple2<Long, DoubleValue>> out) throws Exception {
 
 			long degree;
@@ -130,9 +132,9 @@ public class LocalClusteringCoefficient implements
 			long denominator = 0;
 			cc.setValue(0);
 
-			for (Tuple2<Long, Long> t : vertexWithDegree) {
+			for (Tuple2<Long, LongValue> t : vertexWithDegree) {
 				vertexID = t.f0;
-				degree = directed ? t.f1 : t.f1/2;
+				degree = directed ? t.f1.getValue() : t.f1.getValue()/2;
 				denominator = degree * (degree - 1);
 				result.setField(vertexID, 0);
 			}

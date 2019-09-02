@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.wcc;
+package science.atlarge.graphalytics.flink.algorithms.wcc;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
@@ -24,9 +24,9 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
 
@@ -45,7 +45,7 @@ public class ScatterGatherConnectedComponents implements
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) throws Exception {
+	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> graph) {
 
 		//TODO: make the optimization of taking the min value and group by
 		Graph<Long, Long, NullValue> initializedInput =
@@ -54,7 +54,9 @@ public class ScatterGatherConnectedComponents implements
 			initializedInput = initializedInput.getUndirected();
 		}
 		return initializedInput.runScatterGatherIteration(
-				new CCUpdater(), new CCMessenger(), maxIterations)
+					new CCMessenger(),
+					new CCUpdater(),
+					maxIterations)
 				.getVertices().map(new VertexToTuple2Map<Long, Long>());
 	}
 
@@ -62,10 +64,10 @@ public class ScatterGatherConnectedComponents implements
 	 * Updates the value of a vertex by picking the minimum neighbor ID out of all the incoming messages.
 	 */
 	@SuppressWarnings("serial")
-	public static final class CCUpdater extends VertexUpdateFunction<Long, Long, Long> {
+	public static final class CCUpdater extends GatherFunction<Long, Long, Long> {
 
 		@Override
-		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> messages) throws Exception {
+		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> messages) {
 			long min = Long.MAX_VALUE;
 
 			for (long msg : messages) {
@@ -81,16 +83,16 @@ public class ScatterGatherConnectedComponents implements
 	 * Distributes the minimum ID associated with a given vertex among all the target vertices.
 	 */
 	@SuppressWarnings("serial")
-	public static final class CCMessenger extends MessagingFunction<Long, Long, Long, NullValue> {
+	public static final class CCMessenger extends ScatterFunction<Long, Long, Long, NullValue> {
 
 		@Override
-		public void sendMessages(Vertex<Long, Long> vertex) throws Exception {
+		public void sendMessages(Vertex<Long, Long> vertex) {
 			sendMessageToAllNeighbors(vertex.getValue());
 		}
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
-		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Long map(Vertex<Long, NullValue> vertex) {
 			return vertex.getId();
 		}
 	}

@@ -1,10 +1,10 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
-import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
-import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.cdlp.CommunityDetectionLPOutput;
-import nl.tudelft.graphalytics.validation.algorithms.cdlp.CommunityDetectionLPValidationTest;
+import science.atlarge.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
+import science.atlarge.graphalytics.flink.algorithms.cdlp.LabelPropagation;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.cdlp.CommunityDetectionLPOutput;
+import science.atlarge.graphalytics.validation.algorithms.cdlp.CommunityDetectionLPValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;

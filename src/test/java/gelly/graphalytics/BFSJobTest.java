@@ -1,10 +1,10 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
-import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
-import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.bfs.BreadthFirstSearchOutput;
-import nl.tudelft.graphalytics.validation.algorithms.bfs.BreadthFirstSearchValidationTest;
+import science.atlarge.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
+import science.atlarge.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.bfs.BreadthFirstSearchOutput;
+import science.atlarge.graphalytics.validation.algorithms.bfs.BreadthFirstSearchValidationTest;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;

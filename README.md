@@ -4,6 +4,7 @@
 Please refer to the documentation of the [Graphalytics Repository](https://github.com/tudelft-atlarge/graphalytics) for an introduction to using Graphalytics. For setting up Apache Flink, please refer to the [Flink setup guide](https://ci.apache.org/projects/flink/flink-docs-release-1.0/quickstart/setup_quickstart.html).
 
 ## Supported Algorithms
+- Breadth-First Search
 - Label Propagation
 - Local Clustering Coefficient
 - PageRank

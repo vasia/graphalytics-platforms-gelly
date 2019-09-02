@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.cdlp;
+package science.atlarge.graphalytics.flink.algorithms.cdlp;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.CommunityDetectionLPParameters;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 @SuppressWarnings("serial")
 public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Long>>> {
@@ -57,7 +57,9 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 			initializedInput = initializedInput.getUndirected();
 		}
 		return initializedInput.runScatterGatherIteration(
-				new UpdateVertexLabel(), new SendNewLabelToNeighbors(), maxIterations)
+					new SendNewLabelToNeighbors(),
+					new UpdateVertexLabel(),
+					maxIterations)
 				.getVertices().map(new VertexToTuple2Map<Long, Long>());
 	}
 	
@@ -65,7 +67,7 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 	 * Function that updates the value of a vertex by adopting the most frequent
 	 * label among its in-neighbors
 	 */
-	public static final class UpdateVertexLabel extends VertexUpdateFunction<Long, Long, Long> {
+	public static final class UpdateVertexLabel extends GatherFunction<Long, Long, Long> {
 	
 		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> inMessages) {
 			Map<Long, Long> labelsWithFrequencies = new HashMap<>();
@@ -102,7 +104,7 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 	/**
 	 * Sends the vertex label to all out-neighbors
 	 */
-	public static final class SendNewLabelToNeighbors extends MessagingFunction<Long, Long, Long, NullValue> {
+	public static final class SendNewLabelToNeighbors extends ScatterFunction<Long, Long, Long, NullValue> {
 	
 		public void sendMessages(Vertex<Long, Long> vertex) {
 			sendMessageToAllNeighbors(vertex.getValue());
@@ -110,7 +112,7 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Long> {
-		public Long map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Long map(Vertex<Long, NullValue> vertex) {
 			return vertex.getId();
 		}
 	}

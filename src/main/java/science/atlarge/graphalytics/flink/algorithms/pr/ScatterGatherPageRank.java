@@ -16,10 +16,8 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.pr;
+package science.atlarge.graphalytics.flink.algorithms.pr;
 
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.PageRankParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -28,10 +26,13 @@ import org.apache.flink.graph.EdgeJoinFunction;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
+import org.apache.flink.types.LongValue;
 import org.apache.flink.types.NullValue;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
 
 public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Double>>> {
 
@@ -47,18 +48,20 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) throws Exception {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) {
 
-		DataSet<Tuple2<Long, Long>> vertexOutDegrees = network.outDegrees();
+		DataSet<Tuple2<Long, LongValue>> vertexOutDegrees = network.outDegrees();
 
 		Graph<Long, Double, Double> networkWithWeights = network
 				.mapVertices(new InitVertexValues())
 				.mapEdges(new InitEdgeValues())
 				.joinWithEdgesOnSource(vertexOutDegrees, new InitWeights());
 
-		return networkWithWeights.runScatterGatherIteration(new VertexRankUpdater(beta, numberOfVertices),
-				new RankMessenger(numberOfVertices), maxIterations)
-				.getVertices();
+		return networkWithWeights.runScatterGatherIteration(
+				new RankMessenger(numberOfVertices),
+				new VertexRankUpdater(beta, numberOfVertices),
+				maxIterations)
+			.getVertices();
 	}
 
 	/**
@@ -66,7 +69,7 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	 * ranks from all incoming messages and then applying the dampening formula.
 	 */
 	@SuppressWarnings("serial")
-	public static final class VertexRankUpdater<K> extends VertexUpdateFunction<K, Double, Double> {
+	public static final class VertexRankUpdater<K> extends GatherFunction<K, Double, Double> {
 
 		private final float beta;
 		private final long numVertices;
@@ -80,7 +83,7 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 		public void updateVertex(Vertex<K, Double> vertex, MessageIterator<Double> inMessages) {
 			double rankSum = 0.0;
 			for (double msg : inMessages) {
-				rankSum += msg;
+				rankSum = msg;
 			}
 
 			// apply the dampening factor / random jump
@@ -95,7 +98,7 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	 * value.
 	 */
 	@SuppressWarnings("serial")
-	public static final class RankMessenger<K> extends MessagingFunction<K, Double, Double, Double> {
+	public static final class RankMessenger<K> extends ScatterFunction<K, Double, Double, Double> {
 
 		private final long numVertices;
 
@@ -117,21 +120,21 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	}
 
 	@SuppressWarnings("serial")
-	private static final class InitWeights implements EdgeJoinFunction<Double, Long> {
+	private static final class InitWeights implements EdgeJoinFunction<Double, LongValue> {
 
-		public Double edgeJoin(Double edgeValue, Long inputValue) {
-			return edgeValue / (double) inputValue;
+		public Double edgeJoin(Double edgeValue, LongValue inputValue) {
+			return edgeValue / (double) inputValue.getValue();
 		}
 	}
 
 	private static final class InitVertexValues implements MapFunction<Vertex<Long, NullValue>, Double> {
-		public Double map(Vertex<Long, NullValue> vertex) throws Exception {
+		public Double map(Vertex<Long, NullValue> vertex) {
 			return 1.0;
 		}
 	}
 
 	private static final class InitEdgeValues implements MapFunction<Edge<Long, NullValue>, Double> {
-		public Double map(Edge<Long, NullValue> edge) throws Exception {
+		public Double map(Edge<Long, NullValue> edge) {
 			return 1.0;
 		}
 	}

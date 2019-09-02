@@ -16,21 +16,21 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink.algorithms.bfs;
+package science.atlarge.graphalytics.flink.algorithms.bfs;
 
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
+import org.apache.flink.graph.spargel.ScatterFunction;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.algorithms.BreadthFirstSearchParameters;
 
 public class ScatterGatherBFS implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Long>>> {
 
@@ -56,8 +56,11 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, NullValue, NullVal
 	public DataSet<Tuple2<Long, Long>> run(Graph<Long, NullValue, NullValue> input) {
 
 		return input.mapVertices(new InitVerticesMapper(srcVertexId))
-				.runScatterGatherIteration(new VertexDistanceUpdater(), new MinDistanceMessenger(),
-				maxIterations).getVertices().map(new VertexToTuple2Map<Long, Long>());
+				.runScatterGatherIteration(
+					new MinDistanceMessenger(),
+					new VertexDistanceUpdater(),
+					maxIterations)
+				.getVertices().map(new VertexToTuple2Map<Long, Long>());
 	}
 
 	@SuppressWarnings("serial")
@@ -84,7 +87,7 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, NullValue, NullVal
 	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class VertexDistanceUpdater extends VertexUpdateFunction<Long, Long, Long> {
+	public static final class VertexDistanceUpdater extends GatherFunction<Long, Long, Long> {
 
 		@Override
 		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> inMessages) {
@@ -109,7 +112,7 @@ public class ScatterGatherBFS implements GraphAlgorithm<Long, NullValue, NullVal
 	 *
 	 */
 	@SuppressWarnings("serial")
-	public static final class MinDistanceMessenger extends MessagingFunction<Long, Long, Long, NullValue> {
+	public static final class MinDistanceMessenger extends ScatterFunction<Long, Long, Long, NullValue> {
 
 		@Override
 		public void sendMessages(Vertex<Long, Long> vertex) {

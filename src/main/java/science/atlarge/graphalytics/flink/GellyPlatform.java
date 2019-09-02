@@ -16,21 +16,8 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink;
+package science.atlarge.graphalytics.flink;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import nl.tudelft.graphalytics.domain.*;
-import nl.tudelft.graphalytics.domain.algorithms.AlgorithmParameters;
-import nl.tudelft.graphalytics.domain.graph.PropertyList;
-import nl.tudelft.graphalytics.domain.graph.PropertyType;
-import nl.tudelft.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
-import nl.tudelft.graphalytics.flink.algorithms.cdlp.LabelPropagation;
-import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
-import nl.tudelft.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
-import nl.tudelft.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
-import nl.tudelft.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -39,11 +26,30 @@ import org.apache.flink.configuration.ConfigConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
-import nl.tudelft.graphalytics.AbstractPlatform;
-import nl.tudelft.graphalytics.PlatformExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import science.atlarge.graphalytics.domain.algorithms.Algorithm;
+import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
+import science.atlarge.graphalytics.domain.benchmark.BenchmarkRun;
+import science.atlarge.graphalytics.domain.graph.FormattedGraph;
+import science.atlarge.graphalytics.domain.graph.LoadedGraph;
+import science.atlarge.graphalytics.domain.graph.PropertyList;
+import science.atlarge.graphalytics.domain.graph.PropertyType;
+import science.atlarge.graphalytics.execution.AbstractPlatform;
+import science.atlarge.graphalytics.execution.BenchmarkRunSetup;
+import science.atlarge.graphalytics.execution.PlatformExecutionException;
+import science.atlarge.graphalytics.execution.RunSpecification;
+import science.atlarge.graphalytics.execution.RuntimeSetup;
+import science.atlarge.graphalytics.flink.algorithms.bfs.ScatterGatherBFS;
+import science.atlarge.graphalytics.flink.algorithms.cdlp.LabelPropagation;
+import science.atlarge.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
+import science.atlarge.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
+import science.atlarge.graphalytics.flink.algorithms.sssp.ScatterGatherSSSP;
+import science.atlarge.graphalytics.flink.algorithms.wcc.ScatterGatherConnectedComponents;
+import science.atlarge.graphalytics.report.result.BenchmarkMetrics;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class GellyPlatform extends AbstractPlatform {
 
@@ -72,7 +78,6 @@ public class GellyPlatform extends AbstractPlatform {
 	private PropertiesConfiguration config;
 
 	public GellyPlatform() {
-
 		setup();
 
 		// read configuration parameters
@@ -107,8 +112,12 @@ public class GellyPlatform extends AbstractPlatform {
 	}
 
 	@Override
-	public void uploadGraph(Graph graph) throws Exception {
+	public void verifySetup() {
 
+	}
+
+	@Override
+	public LoadedGraph loadGraph(FormattedGraph graph) {
 		Path vertexPath = new Path(graph.getVertexFilePath());
 		Path edgePath = new Path(graph.getEdgeFilePath());
 		Path hdfsVertexPath = new Path(HDFS_DIRECTORY + "/input/" + graph.getName() + ".v");
@@ -125,25 +134,41 @@ public class GellyPlatform extends AbstractPlatform {
 		} catch (Exception e) {
 			LOG.error("*** ERROR while uploading the graph: " + e.getMessage());
 		}
+		return new LoadedGraph(graph, vertexPath.toString(), edgePath.toString());
 	}
 
 	@Override
-	public PlatformBenchmarkResult executeAlgorithmOnGraph(Benchmark benchmark)
-			throws PlatformExecutionException {
+	public void prepare(RunSpecification runSpecification) {
 
-		Algorithm algo = benchmark.getAlgorithm();
-		Graph input = benchmark.getGraph();
-		AlgorithmParameters parameters = (AlgorithmParameters) benchmark.getAlgorithmParameters();
+	}
+
+	@Override
+	public void startup(RunSpecification runSpecification) {
+
+	}
+
+	@Override
+	public void run(RunSpecification runSpecification) throws PlatformExecutionException {
+		BenchmarkRun benchmarkRun = runSpecification.getBenchmarkRun();
+		BenchmarkRunSetup benchmarkRunSetup = runSpecification.getBenchmarkRunSetup();
+		RuntimeSetup runtimeSetup = runSpecification.getRuntimeSetup();
+
+		Algorithm algo = benchmarkRun.getAlgorithm();
+		final FormattedGraph input = runtimeSetup.getLoadedGraph().getFormattedGraph();
+
+		AlgorithmParameters parameters = benchmarkRun.getAlgorithmParameters();
 		boolean isDirected = input.isDirected();
 
 		boolean hasEdgeValues = false;
-		//check if edges have values
+
+		// check if edges have values
 		PropertyList edgeProps = input.getEdgeProperties();
 		if (edgeProps.size() > 0 ) {
 			if (edgeProps.get(0).getType().equals(PropertyType.REAL)) {
 				hasEdgeValues = true;
 			}
 		}
+
 		String outputPath = hdfsHost + HDFS_DIRECTORY + "/output/"
 				+ input.getName() + "-" + algo.getAcronym();
 		Tuple2<String, String> inputPaths = graphPaths.get(input.getName());
@@ -181,17 +206,25 @@ public class GellyPlatform extends AbstractPlatform {
 			e.printStackTrace();
 			throw new PlatformExecutionException("Gelly job failed: " + e.getMessage());
 		}
-		return new PlatformBenchmarkResult(NestedConfiguration.empty());
 	}
 
 	@Override
-	public void deleteGraph(String graphName) {
-		// TODO Auto-generated method stub
-		
+	public BenchmarkMetrics finalize(RunSpecification runSpecification) {
+		return null;
 	}
 
 	@Override
-	public String getName() {
+	public void terminate(RunSpecification runSpecification) {
+
+	}
+
+	@Override
+	public void deleteGraph(LoadedGraph loadedGraph) {
+
+	}
+
+	@Override
+	public String getPlatformName() {
 		return "Gelly";
 	}
 }

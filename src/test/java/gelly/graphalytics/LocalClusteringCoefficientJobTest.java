@@ -1,9 +1,9 @@
 package gelly.graphalytics;
 
-import nl.tudelft.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
-import nl.tudelft.graphalytics.validation.GraphStructure;
-import nl.tudelft.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientOutput;
-import nl.tudelft.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientValidationTest;
+import science.atlarge.graphalytics.flink.algorithms.lcc.LocalClusteringCoefficient;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientOutput;
+import science.atlarge.graphalytics.validation.algorithms.lcc.LocalClusteringCoefficientValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;

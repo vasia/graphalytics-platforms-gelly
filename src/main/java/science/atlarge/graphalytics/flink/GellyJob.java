@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package nl.tudelft.graphalytics.flink;
+package science.atlarge.graphalytics.flink;
 
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
