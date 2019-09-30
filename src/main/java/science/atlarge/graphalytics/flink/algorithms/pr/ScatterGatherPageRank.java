@@ -18,6 +18,7 @@
 
 package science.atlarge.graphalytics.flink.algorithms.pr;
 
+import org.apache.flink.api.common.aggregators.DoubleSumAggregator;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -26,29 +27,35 @@ import org.apache.flink.graph.EdgeJoinFunction;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.graph.asm.degree.annotate.directed.VertexOutDegree;
 import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.ScatterFunction;
+import org.apache.flink.graph.spargel.ScatterGatherConfiguration;
+import org.apache.flink.types.DoubleValue;
 import org.apache.flink.types.LongValue;
 import org.apache.flink.types.NullValue;
 import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
 import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
 
+
 public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, NullValue, DataSet<Tuple2<Long, Double>>> {
 
-	private final float beta;
+	private final float damping;
 	private final int maxIterations;
-	private final long numberOfVertices;
 
-	public ScatterGatherPageRank(AlgorithmParameters params, long numVertices) {
+	public ScatterGatherPageRank(AlgorithmParameters params) {
 		PageRankParameters prParams = (PageRankParameters)params;
-		beta = prParams.getDampingFactor();
+		damping = prParams.getDampingFactor();
 		maxIterations = prParams.getNumberOfIterations();
-		numberOfVertices = numVertices;
 	}
 
 	@Override
-	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) {
+	public DataSet<Tuple2<Long, Double>> run(Graph<Long, NullValue, NullValue> network) throws Exception {
+		DataSet<Vertex<Long, LongValue>> outDegrees = network.run(new VertexOutDegree<>());
+
+		// determine the number of dangling vertices: vertexOutDegrees only contains non-dangling vertices
+		long numberOfDanglingVertices = network.numberOfVertices() - outDegrees.count();
 
 		DataSet<Tuple2<Long, LongValue>> vertexOutDegrees = network.outDegrees();
 
@@ -57,10 +64,16 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 				.mapEdges(new InitEdgeValues())
 				.joinWithEdgesOnSource(vertexOutDegrees, new InitWeights());
 
+		ScatterGatherConfiguration parameters = new ScatterGatherConfiguration();
+		parameters.setOptDegrees(true);
+		parameters.setOptNumVertices(true);
+		parameters.registerAggregator("danglingAggregator", new DoubleSumAggregator());
+
 		return networkWithWeights.runScatterGatherIteration(
-				new RankMessenger(numberOfVertices),
-				new VertexRankUpdater(beta, numberOfVertices),
-				maxIterations)
+				new RankMessenger(),
+				new VertexRankUpdater(damping, numberOfDanglingVertices),
+				maxIterations,
+				parameters)
 			.getVertices();
 	}
 
@@ -71,24 +84,42 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	@SuppressWarnings("serial")
 	public static final class VertexRankUpdater<K> extends GatherFunction<K, Double, Double> {
 
-		private final float beta;
-		private final long numVertices;
-		
-		public VertexRankUpdater(float beta, long numberOfVertices) {
-			this.beta = beta;
-			this.numVertices = numberOfVertices;
+		private final float damping;
+		private final double numberOfDanglingVertices;
+
+		public VertexRankUpdater(float damping, double numberOfDanglingVertices) {
+			this.damping = damping;
+			this.numberOfDanglingVertices = numberOfDanglingVertices;
 		}
 
 		@Override
 		public void updateVertex(Vertex<K, Double> vertex, MessageIterator<Double> inMessages) {
 			double rankSum = 0.0;
 			for (double msg : inMessages) {
-				rankSum = msg;
+				rankSum += msg;
 			}
 
-			// apply the dampening factor / random jump
-			double newRank = (beta * rankSum) + (1.0 - beta) / (double) numVertices;
+			double sumDangling;
+			if (getSuperstepNumber() == 1) {
+				sumDangling = numberOfDanglingVertices / (double) getNumberOfVertices();
+			} else {
+				DoubleValue sumDanglingValue = getPreviousIterationAggregate("danglingAggregator");
+				sumDangling = sumDanglingValue.getValue();
+			}
+
+			// compute new PageRank value: teleport + importance + dangling
+			double teleport = (1.0 - damping) / (double) getNumberOfVertices();
+			double importance = damping * rankSum;
+			double dangling = damping / (double) getNumberOfVertices() * sumDangling;
+
+			double newRank = teleport + importance + dangling;
 			setNewVertexValue(newRank);
+
+			// for dangling vertices, aggregate their PageRank
+			if (getOutDegree() == 0) {
+				DoubleSumAggregator danglingAggregator = getIterationAggregator("danglingAggregator");
+				danglingAggregator.aggregate(newRank);
+			}
 		}
 	}
 
@@ -100,22 +131,20 @@ public class ScatterGatherPageRank implements GraphAlgorithm<Long, NullValue, Nu
 	@SuppressWarnings("serial")
 	public static final class RankMessenger<K> extends ScatterFunction<K, Double, Double, Double> {
 
-		private final long numVertices;
-
-		public RankMessenger(long numberOfVertices) {
-			this.numVertices = numberOfVertices;
+		public RankMessenger() {
 		}
 
 		@Override
 		public void sendMessages(Vertex<K, Double> vertex) {
 			if (getSuperstepNumber() == 1) {
 				// initialize vertex ranks
-				vertex.setValue(new Double(1.0 / (double) numVertices));
+				vertex.setValue(1.0 / (double) getNumberOfVertices());
 			}
 
 			for (Edge<K, Double> edge : getEdges()) {
 				sendMessageTo(edge.getTarget(), vertex.getValue() * edge.getValue());
 			}
+			sendMessageTo(vertex.getId(), 0.0);
 		}
 	}
 

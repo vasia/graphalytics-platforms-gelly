@@ -1,21 +1,23 @@
 package gelly.graphalytics;
 
-import org.junit.Ignore;
-import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
-import science.atlarge.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
-import science.atlarge.graphalytics.validation.GraphStructure;
-import science.atlarge.graphalytics.validation.algorithms.pr.PageRankOutput;
-import science.atlarge.graphalytics.validation.algorithms.pr.PageRankValidationTest;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.types.NullValue;
+import science.atlarge.graphalytics.domain.algorithms.PageRankParameters;
+import science.atlarge.graphalytics.flink.algorithms.pr.ScatterGatherPageRank;
+import science.atlarge.graphalytics.validation.GraphStructure;
+import science.atlarge.graphalytics.validation.algorithms.pr.PageRankOutput;
+import science.atlarge.graphalytics.validation.algorithms.pr.PageRankValidationTest;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-@Ignore
 public class GatherScatterPageRankJobTest extends PageRankValidationTest {
 
     @Override
@@ -24,8 +26,7 @@ public class GatherScatterPageRankJobTest extends PageRankValidationTest {
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the PageRank job
-        DataSet<Tuple2<Long, Double>> result = input.run(
-                new ScatterGatherPageRank(params, graphStructure.getVertices().size()));
+        DataSet<Tuple2<Long, Double>> result = input.run(new ScatterGatherPageRank(params));
         return convertResult(result);
     }
 
@@ -35,8 +36,7 @@ public class GatherScatterPageRankJobTest extends PageRankValidationTest {
 
         Graph<Long, NullValue, NullValue> input = getInputGraph(graphStructure);
         // run the PageRank job
-        DataSet<Tuple2<Long, Double>> result = input.run(
-                new ScatterGatherPageRank(params, graphStructure.getVertices().size()));
+        DataSet<Tuple2<Long, Double>> result = input.run(new ScatterGatherPageRank(params));
         return convertResult(result);
     }
 
