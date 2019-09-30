@@ -21,12 +21,14 @@ package science.atlarge.graphalytics.flink.algorithms.cdlp;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.graph.EdgeDirection;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.GraphAlgorithm;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.spargel.GatherFunction;
 import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.ScatterFunction;
+import org.apache.flink.graph.spargel.ScatterGatherConfiguration;
 import org.apache.flink.graph.utils.VertexToTuple2Map;
 import org.apache.flink.types.NullValue;
 import science.atlarge.graphalytics.domain.algorithms.AlgorithmParameters;
@@ -56,23 +58,28 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 		if (isDirected) {
 			initializedInput = initializedInput.getUndirected();
 		}
+
+		ScatterGatherConfiguration parameters = new ScatterGatherConfiguration();
+		parameters.setDirection(EdgeDirection.ALL);
+
 		return initializedInput.runScatterGatherIteration(
 					new SendNewLabelToNeighbors(),
 					new UpdateVertexLabel(),
-					maxIterations)
-				.getVertices().map(new VertexToTuple2Map<Long, Long>());
+					maxIterations,
+					parameters)
+				.getVertices().map(new VertexToTuple2Map<>());
 	}
 	
 	/**
 	 * Function that updates the value of a vertex by adopting the most frequent
-	 * label among its in-neighbors
+	 * label among its neighbors
 	 */
 	public static final class UpdateVertexLabel extends GatherFunction<Long, Long, Long> {
 	
 		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> inMessages) {
 			Map<Long, Long> labelsWithFrequencies = new HashMap<>();
 	
-			long maxFrequency = 1;
+			long maxFrequency = 1L;
 			long mostFrequentLabel = vertex.getValue();
 	
 			// store the labels with their frequencies
@@ -84,8 +91,9 @@ public class LabelPropagation implements GraphAlgorithm<Long, NullValue, NullVal
 					labelsWithFrequencies.put(msg, 1L);
 				}
 			}
+
 			// select the most frequent label: if two or more labels have the
-			// same frequency, the node adopts the label with the smallest value
+			// same frequency, the vertex adopts the label with the smallest value
 			for (Entry<Long, Long> entry : labelsWithFrequencies.entrySet()) {
 				if (entry.getValue() == maxFrequency) {
 					// check the label value to break ties
